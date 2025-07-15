@@ -4,7 +4,7 @@
       <h2>小程序管理</h2>
       <div class="header-actions">
         <el-dropdown @command="handleCommand">
-          <el-button type="primary">
+          <el-button type="info">
             <el-icon><Setting /></el-icon>
             设置
             <el-icon class="el-icon--right"><arrow-down /></el-icon>
@@ -29,6 +29,21 @@
           :label="category.name"
           :name="category.id"
         >
+          <template #label>
+            <div class="tab-label" @mouseenter="showDeleteButton(category.id)" @mouseleave="hideDeleteButton(category.id)">
+              <span>{{ category.name }}</span>
+              <el-button
+                v-if="hoveredCategory === category.id"
+                @click.stop="deleteCategory(category)"
+                type="danger"
+                size="small"
+                :icon="Delete"
+                circle
+                class="delete-category-btn"
+              />
+            </div>
+          </template>
+          
           <div class="miniprogram-grid">
             <el-card
               v-for="miniprogram in category.miniprograms"
@@ -109,15 +124,23 @@
             v-model="newForm.category_id"
             placeholder="请选择分类"
             style="width: 100%"
-            allow-create
-            filterable
             @change="handleCategoryChange"
           >
+            <el-option
+              label="-- 选择已有分类 --"
+              value=""
+              disabled
+            />
             <el-option
               v-for="category in categories"
               :key="category.id"
               :label="category.name"
               :value="category.id"
+            />
+            <el-option
+              label="+ 新建分类"
+              value="__create_new__"
+              style="color: #67c23a; font-weight: bold;"
             />
           </el-select>
         </el-form-item>
@@ -177,7 +200,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
@@ -217,6 +240,9 @@ const categoryForm = reactive({
   name: '',
   description: ''
 })
+
+// 删除分类相关
+const hoveredCategory = ref('')
 
 // 表单验证规则
 const formRules = {
@@ -258,7 +284,13 @@ const loadCategories = async () => {
     
     categories.value = data
     if (data.length > 0) {
-      activeTab.value = data[0].id
+      // 尝试从 sessionStorage 恢复 activeTab
+      const savedTab = sessionStorage.getItem('managePageActiveTab');
+      if (savedTab && data.some(cat => cat.id === savedTab)) {
+        activeTab.value = savedTab;
+      } else {
+        activeTab.value = data[0].id
+      }
     }
   } catch (error) {
     ElMessage.error('加载分类失败')
@@ -268,32 +300,32 @@ const loadCategories = async () => {
   }
 }
 
+// 监听 activeTab 的变化并保存到 sessionStorage
+watch(activeTab, (newTab) => {
+  if (newTab) {
+    sessionStorage.setItem('managePageActiveTab', newTab);
+  }
+});
+
 const handleCommand = (command) => {
   if (command === 'new') {
     newMiniprogramVisible.value = true
   }
 }
 
-const handleCategoryChange = (value) => {
-  // 如果选择的是新分类（不在现有分类中），则显示新建分类对话框
-  const existingCategory = categories.value.find(cat => cat.id === value)
-  if (!existingCategory && value) {
-    // 如果是新输入的分类，询问是否创建
-    ElMessageBox.confirm(
-      `分类 "${value}" 不存在，是否创建新分类？`,
-      '提示',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning',
-      }
-    ).then(() => {
-      categoryForm.id = value
-      categoryForm.name = value
-      newCategoryVisible.value = true
-    }).catch(() => {
-      newForm.category_id = ''
-    })
+const handleCategoryChange = async (value) => {
+  // 如果选择的是"新建分类"选项
+  if (value === '__create_new__') {
+    // 重置分类表单
+    categoryForm.id = ''
+    categoryForm.name = ''
+    categoryForm.description = ''
+    
+    // 显示新建分类对话框
+    newCategoryVisible.value = true
+    
+    // 清空当前选择，等待用户创建完成
+    newForm.category_id = ''
   }
 }
 
@@ -373,6 +405,50 @@ const deleteMiniprogram = async (miniprogram) => {
       console.error(error)
     }
   }
+}
+
+const deleteCategory = async (category) => {
+  try {
+    const miniprogramCount = category.miniprograms?.length || 0
+    
+    let confirmMessage = ''
+    let confirmTitle = '确认删除'
+    
+    if (miniprogramCount > 0) {
+      confirmMessage = `分类 "${category.name}" 下还有 ${miniprogramCount} 个小程序。删除分类后，这些小程序也将被删除。\n\n确定要删除吗？此操作不可恢复。`
+      confirmTitle = '警告：分类下有小程序'
+    } else {
+      confirmMessage = `确定要删除分类 "${category.name}" 吗？\n\n删除分类后，该分类下的所有小程序也会一并删除。此操作不可恢复。`
+    }
+    
+    await ElMessageBox.confirm(
+      confirmMessage,
+      confirmTitle,
+      {
+        confirmButtonText: '确定删除',
+        cancelButtonText: '取消',
+        type: 'warning',
+        dangerouslyUseHTMLString: false,
+      }
+    )
+
+    await categoryAPI.deleteCategory(category.id)
+    ElMessage.success('分类删除成功')
+    await loadCategories()
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('删除失败')
+      console.error(error)
+    }
+  }
+}
+
+const showDeleteButton = (categoryId) => {
+  hoveredCategory.value = categoryId
+}
+
+const hideDeleteButton = (categoryId) => {
+  hoveredCategory.value = ''
 }
 
 const resetNewForm = () => {
@@ -481,11 +557,63 @@ onMounted(() => {
   flex-wrap: wrap;
 }
 
+/* 按钮层级样式 */
+:deep(.el-button--info) {
+  background: white;
+  border-color: #d1d5db;
+  color: #374151;
+}
+
+:deep(.el-button--info:hover) {
+  background: #f9fafb;
+  border-color: #9ca3af;
+  color: #111827;
+}
+
+:deep(.el-button--info:active) {
+  background: #f3f4f6;
+  border-color: #6b7280;
+  color: #111827;
+}
+
 :deep(.el-tabs__header) {
   margin-bottom: 0;
 }
 
 :deep(.el-tabs__content) {
   padding-top: 0;
+}
+
+.tab-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+
+.delete-category-btn {
+  margin-left: 8px;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.delete-category-btn:hover {
+  opacity: 1;
+}
+
+.tab-label:hover .delete-category-btn {
+  opacity: 1;
+}
+
+/* 确保标签内容不会因为删除按钮而换行 */
+:deep(.el-tabs__item) {
+  white-space: nowrap;
+}
+
+:deep(.el-tabs__nav-wrap) {
+  overflow: visible;
 }
 </style> 

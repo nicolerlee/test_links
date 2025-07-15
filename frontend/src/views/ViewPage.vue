@@ -3,10 +3,10 @@
     <div class="page-header">
       <div class="header-left">
         <el-button @click="goBack" :icon="ArrowLeft">返回</el-button>
-        <h2>查看小程序</h2>
+        <h2>{{ miniprogram?.name || '查看小程序' }}</h2>
       </div>
       <div class="header-actions">
-        <el-button @click="editMiniprogram" type="primary">
+        <el-button @click="editMiniprogram" type="info">
           <el-icon><Edit /></el-icon>
           编辑
         </el-button>
@@ -18,144 +18,6 @@
     </div>
 
     <div v-else-if="miniprogram" class="content-area">
-      <!-- 小程序基本信息 -->
-      <el-card class="section-card" shadow="never">
-        <template #header>
-          <div class="card-header">
-            <h3>{{ miniprogram.name }}</h3>
-            <div class="header-tags">
-              <el-tag :type="miniprogram.status === 1 ? 'success' : 'danger'">
-                {{ miniprogram.status === 1 ? '启用' : '禁用' }}
-              </el-tag>
-              <el-tag type="info">{{ miniprogram.category?.name }}</el-tag>
-            </div>
-          </div>
-        </template>
-        
-        <div class="basic-info">
-          <el-row :gutter="20">
-            <el-col :span="12">
-              <div class="info-item">
-                <label>小程序ID:</label>
-                <span>{{ miniprogram.id }}</span>
-              </div>
-            </el-col>
-            <el-col :span="12">
-              <div class="info-item">
-                <label>创建时间:</label>
-                <span>{{ formatDateTime(miniprogram.created_at) }}</span>
-              </div>
-            </el-col>
-          </el-row>
-          <el-row :gutter="20">
-            <el-col :span="12">
-              <div class="info-item">
-                <label>所属分类:</label>
-                <span>{{ miniprogram.category?.name || '未知分类' }}</span>
-              </div>
-            </el-col>
-            <el-col :span="12">
-              <div class="info-item">
-                <label>更新时间:</label>
-                <span>{{ formatDateTime(miniprogram.updated_at) }}</span>
-              </div>
-            </el-col>
-          </el-row>
-          <div class="info-item">
-            <label>描述:</label>
-            <span>{{ miniprogram.description || '暂无描述' }}</span>
-          </div>
-          <div class="info-item">
-            <label>统计信息:</label>
-            <div class="stats">
-              <el-tag size="large" type="info">
-                <el-icon><Link /></el-icon>
-                域名配置: {{ miniprogram.domain_configs?.length || 0 }}
-              </el-tag>
-              <el-tag size="large" type="success">
-                <el-icon><Connection /></el-icon>
-                链接数量: {{ miniprogram.links?.length || 0 }}
-              </el-tag>
-            </div>
-          </div>
-        </div>
-      </el-card>
-
-      <!-- 域名配置展示 -->
-      <el-card v-if="miniprogram.domain_configs?.length" class="section-card" shadow="never">
-        <template #header>
-          <div class="card-header">
-            <h3>域名配置</h3>
-            <el-tag>{{ miniprogram.domain_configs.length }} 个配置</el-tag>
-          </div>
-        </template>
-
-        <div class="domain-configs">
-          <div
-            v-for="config in miniprogram.domain_configs"
-            :key="config.id"
-            class="domain-config-item"
-          >
-            <el-card shadow="hover">
-              <template #header>
-                <div class="config-header">
-                  <div class="config-title">
-                    <el-tag :type="getDomainTypeColor(config.domain_type)">
-                      {{ getDomainTypeName(config.domain_type) }}
-                    </el-tag>
-                    <span>{{ config.description || '域名配置' }}</span>
-                  </div>
-                  <el-tag
-                    :type="config.status === 1 ? 'success' : 'danger'"
-                    size="small"
-                  >
-                    {{ config.status === 1 ? '启用' : '禁用' }}
-                  </el-tag>
-                </div>
-              </template>
-
-              <div class="domain-info">
-                <el-row :gutter="20" v-if="config.test_domain || config.prod_domain">
-                  <el-col :span="12" v-if="config.test_domain">
-                    <div class="domain-item">
-                      <label>测试域名:</label>
-                      <div class="domain-url">
-                        <el-link :href="config.test_domain" target="_blank" type="primary">
-                          {{ config.test_domain }}
-                          <el-icon><TopRight /></el-icon>
-                        </el-link>
-                      </div>
-                    </div>
-                  </el-col>
-                  <el-col :span="12" v-if="config.prod_domain">
-                    <div class="domain-item">
-                      <label>正式域名:</label>
-                      <div class="domain-url">
-                        <el-link :href="config.prod_domain" target="_blank" type="primary">
-                          {{ config.prod_domain }}
-                          <el-icon><TopRight /></el-icon>
-                        </el-link>
-                      </div>
-                    </div>
-                  </el-col>
-                </el-row>
-                
-                <div v-if="config.first_level || config.second_level || config.third_level" class="path-info">
-                  <label>路径结构:</label>
-                  <div class="path-breadcrumb">
-                    <el-breadcrumb separator="/">
-                      <el-breadcrumb-item v-if="config.first_level">{{ config.first_level }}</el-breadcrumb-item>
-                      <el-breadcrumb-item v-if="config.second_level">{{ config.second_level }}</el-breadcrumb-item>
-                      <el-breadcrumb-item v-if="config.third_level">{{ config.third_level }}</el-breadcrumb-item>
-                    </el-breadcrumb>
-                  </div>
-                </div>
-              </div>
-            </el-card>
-          </div>
-        </div>
-      </el-card>
-
       <!-- 链接展示 -->
       <el-card v-if="miniprogram.links?.length" class="section-card" shadow="never">
         <template #header>
@@ -166,6 +28,14 @@
         </template>
 
         <div class="links-section">
+          <!-- 环境切换标签 -->
+          <div class="environment-tabs">
+            <el-tabs v-model="activeEnvironment" type="card">
+              <el-tab-pane label="测试环境" name="test"></el-tab-pane>
+              <el-tab-pane label="正式环境" name="prod"></el-tab-pane>
+            </el-tabs>
+          </div>
+
           <!-- 链接统计 -->
           <div class="links-summary" v-if="miniprogram.links.length > 0">
             <el-row :gutter="20">
@@ -199,39 +69,66 @@
               v-for="(link, index) in sortedLinks"
               :key="link.id"
               class="link-item"
-              :class="{ disabled: link.status !== 1 }"
+              :class="{ disabled: !isLinkEffectivelyActive(link) }"
             >
-              <div class="link-header">
-                <div class="link-title">
+              <div class="link-row">
+                <div class="link-info">
                   <el-tag size="small" type="info">{{ index + 1 }}</el-tag>
                   <span class="title-text">{{ link.title }}</span>
                   <el-tag 
-                    :type="link.status === 1 ? 'success' : 'danger'" 
+                    :type="isLinkEffectivelyActive(link) ? 'success' : 'danger'" 
                     size="small"
                   >
-                    {{ link.status === 1 ? '启用' : '禁用' }}
+                    {{ isLinkEffectivelyActive(link) ? '启用' : '禁用' }}
                   </el-tag>
+                </div>
+                <div class="link-url-inline">
+                  <el-input
+                    :value="getFullUrl(link)"
+                    readonly
+                    size="small"
+                    class="url-input"
+                  />
                 </div>
                 <div class="link-actions">
                   <el-button
-                    v-if="link.status === 1"
-                    @click="copyLink(link.url)"
+                    v-if="isLinkEffectivelyActive(link)"
+                    @click="copyLink(getFullUrl(link))"
                     type="primary"
                     size="small"
                   >
                     <el-icon><CopyDocument /></el-icon>
-                    复制链接
+                    复制
                   </el-button>
+                  <div class="qr-code-wrapper" style="position: relative;">
+                    <el-button
+                      v-if="isLinkEffectivelyActive(link)"
+                      @mouseenter="showQrCode(link.id, getFullUrl(link))"
+                      @mouseleave="hideQrCode(link.id)"
+                      type="info"
+                      size="small"
+                    >
+                      <el-icon><Share /></el-icon>
+                      二维码
+                    </el-button>
+                    <!-- 二维码悬浮层 -->
+                    <div 
+                      v-if="qrCodeVisibility[link.id]" 
+                      class="qr-code-tooltip"
+                      @mouseenter="showQrCode(link.id, getFullUrl(link))"
+                      @mouseleave="hideQrCode(link.id)"
+                    >
+                      <div class="qr-code-content">
+                        <div class="qr-code-image">
+                          <canvas :ref="(el) => qrCodeRefs[link.id] = el" class="qr-canvas"></canvas>
+                        </div>
+                        <div class="qr-code-info">
+                          <p class="qr-code-text">扫描二维码访问链接</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div class="link-url">
-                <el-input
-                  :value="link.url"
-                  readonly
-                  type="textarea"
-                  :rows="2"
-                  resize="none"
-                />
               </div>
             </div>
           </div>
@@ -239,10 +136,10 @@
       </el-card>
 
       <!-- 空状态 -->
-      <div v-if="!miniprogram.domain_configs?.length && !miniprogram.links?.length" class="empty-state">
-        <el-empty description="暂无配置数据">
+      <div v-if="!miniprogram.links?.length" class="empty-state">
+        <el-empty description="暂无链接数据">
           <el-button @click="editMiniprogram" type="primary">
-            添加配置
+            添加链接
           </el-button>
         </el-empty>
       </div>
@@ -259,7 +156,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import {
@@ -270,9 +167,11 @@ import {
   TopRight,
   Check,
   Close,
-  CopyDocument
+  CopyDocument,
+  Share
 } from '@element-plus/icons-vue'
 import { miniprogramAPI } from '@/api'
+import QRCode from 'qrcode'
 
 const router = useRouter()
 
@@ -288,18 +187,37 @@ const props = defineProps({
 const loading = ref(true)
 const miniprogram = ref(null)
 
+// 环境切换
+const activeEnvironment = ref('test')
+
+// 二维码相关状态
+const qrCodeVisibility = ref({})
+const qrCodeRefs = ref({})
+const qrCodeTimeouts = ref({})
+
 // 计算属性
 const activeLinks = computed(() => {
+  if (miniprogram.value?.status !== 1) {
+    return [];
+  }
   return miniprogram.value?.links?.filter(link => link.status === 1) || []
 })
 
 const inactiveLinks = computed(() => {
+  if (miniprogram.value?.status !== 1) {
+    return miniprogram.value?.links || [];
+  }
   return miniprogram.value?.links?.filter(link => link.status !== 1) || []
 })
 
 const sortedLinks = computed(() => {
   return miniprogram.value?.links?.slice().sort((a, b) => a.sort_order - b.sort_order) || []
 })
+
+const isLinkEffectivelyActive = (link) => {
+  if (!link || !miniprogram.value) return false;
+  return miniprogram.value.status === 1 && link.status === 1;
+}
 
 // 方法
 const loadData = async () => {
@@ -315,29 +233,38 @@ const loadData = async () => {
   }
 }
 
-const getDomainTypeName = (type) => {
-  const typeMap = {
-    default: '默认',
-    order: '订购',
-    receive: '领取',
-    pay: '付费',
-    share: '分享',
-    custom: '自定义'
-  }
-  return typeMap[type] || type
+// 刷新数据
+const refreshData = async () => {
+  await loadData()
+  ElMessage.success('数据已刷新')
 }
 
-const getDomainTypeColor = (type) => {
-  const colorMap = {
-    default: '',
-    order: 'warning',
-    receive: 'success',
-    pay: 'danger',
-    share: 'info',
-    custom: 'primary'
+// 页面获得焦点时刷新数据
+const handleVisibilityChange = () => {
+  if (!document.hidden) {
+    loadData()
   }
-  return colorMap[type] || ''
 }
+
+// 生命周期
+onMounted(() => {
+  loadData()
+  // 监听页面可见性变化
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+})
+
+// 清理定时器和事件监听
+onBeforeUnmount(() => {
+  // 清理所有二维码定时器
+  Object.values(qrCodeTimeouts.value).forEach(timeout => {
+    clearTimeout(timeout)
+  })
+  qrCodeTimeouts.value = {}
+  
+  // 移除事件监听
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
+})
+
 
 const formatDateTime = (dateStr) => {
   if (!dateStr) return '-'
@@ -380,10 +307,104 @@ const goBack = () => {
   router.back()
 }
 
-// 生命周期
-onMounted(() => {
-  loadData()
-})
+// 获取完整URL
+const getFullUrl = (link) => {
+  if (!link) return ''
+  
+  // 获取默认域名配置
+  const domainConfig = miniprogram.value?.domain_configs?.find(config => config.domain_type === 'default')
+  if (!domainConfig) {
+    return link.url
+  }
+  
+  // 根据环境选择域名
+  const domain = activeEnvironment.value === 'test' ? domainConfig.test_domain : domainConfig.prod_domain
+  if (!domain) {
+    return link.url
+  }
+  
+  // 构建完整URL
+  let fullUrl = domain
+  
+  // 添加路径层级
+  if (domainConfig.first_level) {
+    fullUrl += `/${domainConfig.first_level}`
+  }
+  if (domainConfig.second_level) {
+    fullUrl += `/${domainConfig.second_level}`
+  }
+  if (domainConfig.third_level) {
+    fullUrl += `/${domainConfig.third_level}`
+  }
+  
+  // 添加链接路径
+  const linkPath = link.url.startsWith('/') ? link.url : `/${link.url}`
+  fullUrl += linkPath
+  
+  return fullUrl
+}
+
+// 二维码相关方法
+const showQrCode = async (linkId, url) => {
+  // 清除隐藏的延迟器
+  if (qrCodeTimeouts.value[linkId]) {
+    clearTimeout(qrCodeTimeouts.value[linkId])
+    delete qrCodeTimeouts.value[linkId]
+  }
+  
+  // 显示二维码
+  qrCodeVisibility.value[linkId] = true
+  
+  // 等待DOM更新后生成二维码
+  await nextTick()
+  setTimeout(() => {
+    generateQrCode(linkId, url)
+  }, 50) // 短暂延迟确保DOM完全渲染
+}
+
+const hideQrCode = (linkId) => {
+  // 设置延迟隐藏二维码，避免鼠标快速移动时闪烁
+  qrCodeTimeouts.value[linkId] = setTimeout(() => {
+    qrCodeVisibility.value[linkId] = false
+    delete qrCodeTimeouts.value[linkId]
+  }, 300) // 300毫秒延迟，给用户更多时间
+}
+
+const generateQrCode = async (linkId, url) => {
+  try {
+    const canvas = qrCodeRefs.value[linkId]
+    console.log('Canvas element:', canvas, 'URL:', url)
+    
+    if (canvas) {
+      // 设置canvas尺寸
+      canvas.width = 160
+      canvas.height = 160
+      
+      // 清理canvas
+      const ctx = canvas.getContext('2d')
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      
+      // 生成二维码
+      await QRCode.toCanvas(canvas, url, {
+        width: 160,
+        height: 160,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#ffffff'
+        },
+        errorCorrectionLevel: 'M'
+      })
+      
+      console.log('二维码生成成功')
+    } else {
+      console.error('Canvas element not found')
+    }
+  } catch (error) {
+    console.error('生成二维码失败:', error)
+    ElMessage.error('生成二维码失败: ' + error.message)
+  }
+}
 </script>
 
 <style scoped>
@@ -396,8 +417,8 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 20px;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
   border-bottom: 1px solid #ebeef5;
 }
 
@@ -413,22 +434,45 @@ onMounted(() => {
   font-weight: 600;
 }
 
+/* 页面标题样式 */
+.page-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding: 12px 0;
+  border-bottom: 1px solid #e4e7ed;
+}
+
+.page-title h2 {
+  margin: 0;
+  color: #303133;
+  font-weight: 600;
+  font-size: 20px;
+}
+
+.title-tags {
+  display: flex;
+  gap: 10px;
+}
+
 .loading-container,
 .error-container {
   background: white;
-  border-radius: 8px;
-  padding: 40px;
+  border-radius: 6px;
+  padding: 30px;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.08);
 }
 
 .content-area {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 12px;
 }
 
 .section-card {
   border: 1px solid #ebeef5;
+  min-height: 500px;
 }
 
 .card-header {
@@ -441,7 +485,7 @@ onMounted(() => {
   margin: 0;
   color: #303133;
   font-weight: 600;
-  font-size: 18px;
+  font-size: 16px;
 }
 
 .header-tags {
@@ -537,27 +581,65 @@ onMounted(() => {
 }
 
 .links-section {
-  padding: 10px 0;
+  padding: 20px 0;
+}
+
+.environment-tabs {
+  margin-bottom: 15px;
+  padding: 0 16px;
+}
+
+.environment-tabs :deep(.el-tabs__header) {
+  margin-bottom: 0;
+}
+
+.environment-tabs :deep(.el-tabs__nav) {
+  border: 1px solid #e4e7ed;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.environment-tabs :deep(.el-tabs__item) {
+  border: none;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.environment-tabs :deep(.el-tabs__item.is-active) {
+  background: #409eff;
+  color: white;
+}
+
+.environment-tabs :deep(.el-tabs__item:hover) {
+  background: #ecf5ff;
+  color: #409eff;
+}
+
+.environment-tabs :deep(.el-tabs__item.is-active:hover) {
+  background: #409eff;
+  color: white;
 }
 
 .links-summary {
-  margin-bottom: 30px;
-  padding: 20px;
+  margin-bottom: 15px;
+  padding: 12px 16px;
   background: #fafafa;
-  border-radius: 8px;
+  border-radius: 6px;
 }
 
 .links-list {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 12px;
 }
 
 .link-item {
   border: 1px solid #ebeef5;
-  border-radius: 8px;
-  padding: 15px;
+  border-radius: 6px;
+  padding: 8px 12px;
   transition: all 0.3s;
+  min-height: 40px;
 }
 
 .link-item:hover {
@@ -569,39 +651,68 @@ onMounted(() => {
   background: #f5f7fa;
 }
 
-.link-header {
+.link-row {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
+  gap: 15px;
+  width: 100%;
+  min-height: 40px;
 }
 
-.link-title {
+.link-info {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  flex-shrink: 0;
+  min-width: 200px;
 }
 
 .title-text {
   font-weight: 500;
   color: #303133;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.link-url {
-  margin-top: 10px;
+.link-url-inline {
+  flex: 1;
+  min-width: 0;
+}
+
+.url-input {
+  width: 100%;
+}
+
+.link-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.qr-code-wrapper {
+  position: relative;
 }
 
 .empty-state {
-  padding: 40px;
+  padding: 30px;
   text-align: center;
   background: white;
-  border-radius: 8px;
+  border-radius: 6px;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.08);
 }
 
 :deep(.el-card__header) {
   background-color: #fafafa;
   border-bottom: 1px solid #ebeef5;
+  padding: 12px 16px;
+}
+
+:deep(.el-card__body) {
+  padding: 16px;
+  min-height: 400px;
 }
 
 :deep(.el-statistic__content) {
@@ -610,8 +721,149 @@ onMounted(() => {
   justify-content: center;
 }
 
+:deep(.el-statistic) {
+  --el-statistic-content-font-size: 20px;
+}
+
+:deep(.el-statistic__head) {
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
 :deep(.el-textarea__inner) {
   background: #f5f7fa;
   border: 1px solid #dcdfe6;
+}
+
+/* 二维码相关样式 */
+.qr-code-tooltip {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  z-index: 1000;
+  background: white;
+  border: 1px solid #e4e7ed;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 4px;
+  width: fit-content;
+}
+
+.qr-code-tooltip::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  right: 20px;
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 6px solid white;
+}
+
+.qr-code-tooltip::after {
+  content: '';
+  position: absolute;
+  top: -7px;
+  right: 20px;
+  width: 0;
+  height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-bottom: 7px solid #e4e7ed;
+}
+
+.qr-code-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.qr-code-image {
+  flex-shrink: 0;
+}
+
+.qr-canvas {
+  width: 160px;
+  height: 160px;
+  display: block;
+}
+
+.qr-code-info {
+  text-align: center;
+  padding: 2px 0;
+}
+
+.qr-code-text {
+  margin: 0;
+  font-size: 12px;
+  color: #606266;
+}
+
+/* 按钮层级样式 */
+:deep(.el-button--info) {
+  background: white;
+  border-color: #d1d5db;
+  color: #374151;
+}
+
+:deep(.el-button--info:hover) {
+  background: #f9fafb;
+  border-color: #9ca3af;
+  color: #111827;
+}
+
+:deep(.el-button--info:active) {
+  background: #f3f4f6;
+  border-color: #6b7280;
+  color: #111827;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .link-row {
+    flex-direction: column;
+    gap: 10px;
+    align-items: stretch;
+  }
+  
+  .link-info {
+    min-width: auto;
+  }
+  
+  .link-actions {
+    justify-content: flex-end;
+  }
+  
+  .qr-code-tooltip {
+    top: 50%;
+    right: 100%;
+    bottom: auto;
+    left: auto;
+    transform: translateY(-50%);
+    margin: 0 8px 0 0;
+  }
+  
+  .qr-code-tooltip::before {
+    top: 50%;
+    right: -6px;
+    left: auto;
+    transform: translateY(-50%);
+    border: 6px solid transparent;
+    border-left-color: white;
+    border-right: none;
+  }
+  
+  .qr-code-tooltip::after {
+    top: 50%;
+    right: -7px;
+    left: auto;
+    transform: translateY(-50%);
+    border: 7px solid transparent;
+    border-left-color: #e4e7ed;
+    border-right: none;
+  }
 }
 </style> 
