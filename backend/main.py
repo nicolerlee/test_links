@@ -13,8 +13,8 @@ models.Base.metadata.create_all(bind=engine)
 
 # 创建FastAPI应用
 app = FastAPI(
-    title="小程序管理系统 API",
-    description="一个现代化的小程序链接管理系统",
+    title="测试管理系统 API",
+    description="一个用于管理小程序链接和分类的API",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc"
@@ -36,14 +36,12 @@ app.include_router(domain_configs_router)
 app.include_router(links_router)
 
 # 根路径
-@app.get("/")
-def read_root():
-    return {
-        "message": "小程序管理系统 API",
-        "version": "1.0.0",
-        "docs": "/docs",
-        "redoc": "/redoc"
-    }
+@app.get("/", summary="API Root", tags=["Default"])
+async def root():
+    """
+    API的根节点，返回一个欢迎信息。
+    """
+    return {"message": "测试管理系统 API"}
 
 # 健康检查
 @app.get("/health")

@@ -1,10 +1,14 @@
 #!/bin/bash
 
-# 小程序管理系统部署脚本
+# 测试管理系统部署脚本
 
 set -e
 
-echo "🚀 开始部署小程序管理系统..."
+# 变量定义
+DOCKER_COMPOSE_FILE="docker-compose.yml"
+
+# 开始
+echo "🚀 开始部署测试管理系统..."
 
 # 检查Docker和Docker Compose是否安装
 if ! command -v docker &> /dev/null; then

@@ -40,8 +40,9 @@ const router = createRouter({
 
 // 路由守卫
 router.beforeEach((to, from, next) => {
-  if (to.meta.title) {
-    document.title = `${to.meta.title} - 小程序管理系统`
+  // 简单示例：如果路由需要元信息中的title，则更新文档标题
+  if (to.meta && to.meta.title) {
+    document.title = `${to.meta.title} - 测试管理系统`
   }
   next()
 })

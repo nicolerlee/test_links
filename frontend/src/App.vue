@@ -3,13 +3,15 @@
     <el-container class="app-container">
       <el-header class="app-header">
         <div class="header-content">
-          <h1 class="app-title">
-            <el-icon><Monitor /></el-icon>
-            小程序管理系统
-          </h1>
-          <nav class="nav-menu">
-            <router-link to="/manage" class="nav-link">管理</router-link>
-          </nav>
+          <div class="logo-area">
+            <img src="./assets/logo.svg" alt="" class="logo-img" />
+            <h1 class="system-title">测试管理系统</h1>
+          </div>
+          <div class="header-actions">
+            <nav class="nav-menu">
+              <router-link to="/manage" class="nav-link">管理</router-link>
+            </nav>
+          </div>
         </div>
       </el-header>
       
@@ -46,6 +48,24 @@ import { Monitor } from '@element-plus/icons-vue'
   justify-content: space-between;
 }
 
+.logo-area {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-img {
+  width: 40px;
+  height: 40px;
+}
+
+.system-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: white;
+  margin: 0;
+}
+
 .app-title {
   margin: 0;
   font-size: 24px;
@@ -71,6 +91,10 @@ import { Monitor } from '@element-plus/icons-vue'
 .nav-link:hover,
 .nav-link.router-link-active {
   background-color: rgba(255, 255, 255, 0.2);
+}
+
+.nav-link.router-link-exact-active {
+  display: none;
 }
 
 .app-main {

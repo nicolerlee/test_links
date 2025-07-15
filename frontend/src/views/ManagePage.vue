@@ -1,7 +1,7 @@
 <template>
   <div class="manage-page">
     <div class="page-header">
-      <h2>小程序管理</h2>
+      <h2>H5网页管理</h2>
       <div class="header-actions">
         <el-dropdown @command="handleCommand">
           <el-button type="info">
@@ -13,7 +13,7 @@
             <el-dropdown-menu>
               <el-dropdown-item command="new">
                 <el-icon><Plus /></el-icon>
-                新建小程序
+                新建H5网页
               </el-dropdown-item>
             </el-dropdown-menu>
           </template>
@@ -100,10 +100,10 @@
       </el-tabs>
     </div>
 
-    <!-- 新建小程序对话框 -->
+    <!-- 新建H5网页对话框 -->
     <el-dialog
       v-model="newMiniprogramVisible"
-      title="新建小程序"
+      title="新建H5网页"
       width="500px"
       @close="resetNewForm"
     >
@@ -113,11 +113,11 @@
         :rules="formRules"
         label-width="100px"
       >
-        <el-form-item label="小程序ID" prop="id">
-          <el-input v-model="newForm.id" placeholder="请输入小程序ID" />
+        <el-form-item label="H5网页ID" prop="id">
+          <el-input v-model="newForm.id" placeholder="请输入H5网页ID" />
         </el-form-item>
-        <el-form-item label="小程序名称" prop="name">
-          <el-input v-model="newForm.name" placeholder="请输入小程序名称" />
+        <el-form-item label="H5网页名称" prop="name">
+          <el-input v-model="newForm.name" placeholder="请输入H5网页名称" />
         </el-form-item>
         <el-form-item label="分类" prop="category_id">
           <el-select
@@ -148,7 +148,7 @@
           <el-input
             v-model="newForm.description"
             type="textarea"
-            placeholder="请输入小程序描述"
+            placeholder="请输入H5网页描述"
             :rows="3"
           />
         </el-form-item>
@@ -220,7 +220,7 @@ const categories = ref([])
 const activeTab = ref('')
 const loading = ref(false)
 
-// 新建小程序相关
+// 新建H5网页相关
 const newMiniprogramVisible = ref(false)
 const creating = ref(false)
 const newFormRef = ref()
@@ -247,16 +247,15 @@ const hoveredCategory = ref('')
 // 表单验证规则
 const formRules = {
   id: [
-    { required: true, message: '请输入小程序ID', trigger: 'blur' },
-    { min: 2, max: 100, message: '长度在 2 到 100 个字符', trigger: 'blur' }
+    { required: true, message: '请输入H5网页ID', trigger: 'blur' },
+    {
+      pattern: /^[a-zA-Z0-9_-]+$/,
+      message: 'ID只能包含字母、数字、下划线和连字符',
+      trigger: 'blur'
+    }
   ],
-  name: [
-    { required: true, message: '请输入小程序名称', trigger: 'blur' },
-    { min: 2, max: 200, message: '长度在 2 到 200 个字符', trigger: 'blur' }
-  ],
-  category_id: [
-    { required: true, message: '请选择分类', trigger: 'change' }
-  ]
+  name: [{ required: true, message: '请输入H5网页名称', trigger: 'blur' }],
+  category_id: [{ required: true, message: '请选择分类', trigger: 'change' }]
 }
 
 const categoryRules = {
@@ -276,7 +275,7 @@ const loadCategories = async () => {
     loading.value = true
     const data = await categoryAPI.getCategories()
     
-    // 加载每个分类的小程序
+    // 加载每个分类的H5网页
     for (const category of data) {
       const categoryDetail = await categoryAPI.getCategory(category.id)
       category.miniprograms = categoryDetail.miniprograms || []
@@ -360,15 +359,15 @@ const createMiniprogram = async () => {
     creating.value = true
     
     await miniprogramAPI.createMiniprogram(newForm)
-    ElMessage.success('小程序创建成功')
+    ElMessage.success('H5网页创建成功')
     
     newMiniprogramVisible.value = false
     await loadCategories()
   } catch (error) {
     if (error.response?.status === 400) {
-      ElMessage.error(error.response.data.detail || '小程序创建失败')
+      ElMessage.error(error.response.data.detail || 'H5网页创建失败')
     } else {
-      ElMessage.error('创建小程序失败')
+      ElMessage.error('创建H5网页失败')
     }
     console.error(error)
   } finally {
@@ -387,7 +386,7 @@ const editMiniprogram = (id) => {
 const deleteMiniprogram = async (miniprogram) => {
   try {
     await ElMessageBox.confirm(
-      `确定要删除小程序 "${miniprogram.name}" 吗？此操作不可恢复。`,
+      `确定要删除H5网页 "${miniprogram.name}" 吗？此操作不可恢复。`,
       '确认删除',
       {
         confirmButtonText: '确定',
@@ -415,10 +414,10 @@ const deleteCategory = async (category) => {
     let confirmTitle = '确认删除'
     
     if (miniprogramCount > 0) {
-      confirmMessage = `分类 "${category.name}" 下还有 ${miniprogramCount} 个小程序。删除分类后，这些小程序也将被删除。\n\n确定要删除吗？此操作不可恢复。`
-      confirmTitle = '警告：分类下有小程序'
+      confirmMessage = `分类 "${category.name}" 下还有 ${miniprogramCount} 个H5网页。删除分类后，这些H5网页也将被删除。\n\n确定要删除吗？此操作不可恢复。`
+      confirmTitle = '警告：分类下有H5网页'
     } else {
-      confirmMessage = `确定要删除分类 "${category.name}" 吗？\n\n删除分类后，该分类下的所有小程序也会一并删除。此操作不可恢复。`
+      confirmMessage = `确定要删除分类 "${category.name}" 吗？\n\n删除分类后，该分类下的所有H5网页也会一并删除。此操作不可恢复。`
     }
     
     await ElMessageBox.confirm(

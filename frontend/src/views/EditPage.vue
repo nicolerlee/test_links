@@ -3,7 +3,7 @@
     <div class="page-header">
       <div class="header-left">
         <el-button @click="goBack" :icon="ArrowLeft">返回</el-button>
-        <h2>编辑小程序</h2>
+        <h2>编辑H5网页</h2>
       </div>
       <div class="header-actions">
         <el-button @click="saveAll" type="info" :loading="saving">
@@ -32,12 +32,12 @@
         <el-form ref="basicFormRef" :model="basicForm" label-width="120px">
           <el-row :gutter="20">
             <el-col :span="12">
-              <el-form-item label="小程序ID">
+              <el-form-item label="H5网页ID">
                 <el-input v-model="basicForm.id" disabled />
               </el-form-item>
             </el-col>
             <el-col :span="12">
-              <el-form-item label="小程序名称">
+              <el-form-item label="H5网页名称">
                 <el-input v-model="basicForm.name" />
               </el-form-item>
             </el-col>
@@ -72,7 +72,7 @@
               v-model="basicForm.description"
               type="textarea"
               :rows="3"
-              placeholder="请输入小程序描述"
+              placeholder="请输入H5网页描述"
             />
           </el-form-item>
         </el-form>
@@ -426,7 +426,7 @@
     </div>
 
     <div v-else class="error-container">
-      <el-result icon="warning" title="小程序不存在" sub-title="请检查小程序ID是否正确">
+      <el-result icon="warning" title="H5网页不存在" sub-title="请检查H5网页ID是否正确">
         <template #extra>
           <el-button @click="goBack">返回</el-button>
         </template>
