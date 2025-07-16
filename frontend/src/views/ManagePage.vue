@@ -119,7 +119,7 @@
         <el-form-item label="H5网页名称" prop="name">
           <el-input v-model="newForm.name" placeholder="请输入H5网页名称" />
         </el-form-item>
-        <el-form-item label="分类" prop="category_id">
+        <el-form-item label="H5网页分类" prop="category_id">
           <el-select
             v-model="newForm.category_id"
             placeholder="请选择分类"

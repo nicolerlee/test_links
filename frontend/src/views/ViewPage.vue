@@ -311,8 +311,19 @@ const goBack = () => {
 const getFullUrl = (link) => {
   if (!link) return ''
   
-  // 获取默认域名配置
-  const domainConfig = miniprogram.value?.domain_configs?.find(config => config.domain_type === 'default')
+  // 根据链接的domain_type查找对应的域名配置
+  let domainConfig = null
+  
+  if (link.domain_type) {
+    // 如果链接有domain_type，查找对应的域名配置
+    domainConfig = miniprogram.value?.domain_configs?.find(config => config.domain_type === link.domain_type)
+  }
+  
+  // 如果没有找到对应的域名配置，使用默认域名配置
+  if (!domainConfig) {
+    domainConfig = miniprogram.value?.domain_configs?.find(config => config.domain_type === 'default')
+  }
+  
   if (!domainConfig) {
     return link.url
   }

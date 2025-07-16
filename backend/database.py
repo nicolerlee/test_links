@@ -9,7 +9,7 @@ load_dotenv()
 # 数据库连接URL
 DATABASE_URL = os.getenv(
     "DATABASE_URL", 
-    "mysql+pymysql://app_user:app_password@localhost:3307/miniprogram_manager"
+    "mysql+pymysql://app_user:app_password@localhost:3307/miniprogram_manager?charset=utf8mb4&collation=utf8mb4_unicode_ci"
 )
 
 # 创建数据库引擎
@@ -17,7 +17,12 @@ engine = create_engine(
     DATABASE_URL,
     pool_pre_ping=True,
     pool_recycle=300,
-    echo=False  # 设置为True可以查看SQL语句
+    echo=False,  # 设置为True可以查看SQL语句
+    connect_args={
+        "charset": "utf8mb4",
+        "use_unicode": True,
+        "init_command": "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci"
+    }
 )
 
 # 创建会话工厂

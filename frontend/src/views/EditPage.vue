@@ -3,7 +3,7 @@
     <div class="page-header">
       <div class="header-left">
         <el-button @click="goBack" :icon="ArrowLeft">返回</el-button>
-        <h2>编辑H5网页</h2>
+        <h2>编辑 {{ miniprogram?.name || 'H5网页' }}</h2>
       </div>
       <div class="header-actions">
         <el-button @click="saveAll" type="info" :loading="saving">
@@ -22,7 +22,7 @@
       <el-card class="section-card" shadow="never">
         <template #header>
           <div class="card-header">
-            <h3>{{ miniprogram.name }}</h3>
+            <h3>基本信息</h3>
             <el-tag :type="miniprogram.status === 1 ? 'success' : 'danger'">
               {{ miniprogram.status === 1 ? '启用' : '禁用' }}
             </el-tag>
@@ -78,33 +78,33 @@
         </el-form>
       </el-card>
 
-      <!-- 域名配置 -->
+      <!-- 域名和链接配置组合 -->
       <el-card class="section-card" shadow="never">
         <template #header>
           <div class="card-header">
-            <h3>域名配置</h3>
-            <el-button @click="addDomainConfig" type="success" size="small">
+            <h3>域名和链接配置</h3>
+            <el-button @click="addDomainLinkGroup" type="success" size="small">
               <el-icon><Plus /></el-icon>
-              新增域名配置
+              新建域名链接组
             </el-button>
           </div>
         </template>
 
-        <div class="domain-configs">
+        <div class="domain-link-groups">
           <div
-            v-for="(config, index) in domainConfigs"
-            :key="config.id || `new-${index}`"
-            class="domain-config-item"
+            v-for="(group, groupIndex) in domainLinkGroups"
+            :key="group.id || `new-group-${groupIndex}`"
+            class="domain-link-group"
           >
-            <el-card shadow="hover">
+            <el-card shadow="hover" class="group-card">
               <template #header>
-                <div class="config-header">
-                  <div class="config-title">
-                    <el-tag>{{ config.domain_type }}</el-tag>
-                    <span>{{ config.description || '域名配置' }}</span>
+                <div class="group-header">
+                  <div class="group-title">
+                    <el-tag>{{ group.domain_type }}</el-tag>
+                    <span>{{ group.description || `域名链接组 ${groupIndex + 1}` }}</span>
                   </div>
                   <el-button
-                    @click="removeDomainConfig(index)"
+                    @click="removeDomainLinkGroup(groupIndex)"
                     type="danger"
                     size="small"
                     :icon="Delete"
@@ -113,314 +113,151 @@
                 </div>
               </template>
 
-              <el-form label-width="100px">
-                <el-row :gutter="20">
-                  <el-col :span="12">
-                    <el-form-item label="域名类型">
-                      <el-select v-model="config.domain_type" style="width: 100%">
-                        <el-option label="默认" value="default" />
-                        <el-option label="订购" value="order" />
-                        <el-option label="领取" value="receive" />
-                        <el-option label="付费" value="pay" />
-                        <el-option label="分享" value="share" />
-                        <el-option label="自定义" value="custom" />
-                      </el-select>
-                    </el-form-item>
-                  </el-col>
-                  <el-col :span="12">
-                    <el-form-item label="描述">
-                      <el-input v-model="config.description" placeholder="域名用途描述" />
-                    </el-form-item>
-                  </el-col>
-                </el-row>
-                <el-row :gutter="20">
-                  <el-col :span="12">
-                    <el-form-item label="测试域名">
-                      <el-input v-model="config.test_domain" placeholder="https://test.example.com" />
-                    </el-form-item>
-                  </el-col>
-                  <el-col :span="12">
-                    <el-form-item label="正式域名">
-                      <el-input v-model="config.prod_domain" placeholder="https://prod.example.com" />
-                    </el-form-item>
-                  </el-col>
-                </el-row>
-                <el-row :gutter="20">
-                  <el-col :span="8">
-                    <el-form-item label="一级目录">
-                      <el-input v-model="config.first_level" placeholder="一级目录" />
-                    </el-form-item>
-                  </el-col>
-                  <el-col :span="8">
-                    <el-form-item label="二级目录">
-                      <el-input v-model="config.second_level" placeholder="二级目录" />
-                    </el-form-item>
-                  </el-col>
-                  <el-col :span="8">
-                    <el-form-item label="三级目录">
-                      <el-input v-model="config.third_level" placeholder="三级目录" />
-                    </el-form-item>
-                  </el-col>
-                </el-row>
-              </el-form>
-            </el-card>
-          </div>
-        </div>
-      </el-card>
-
-            <!-- 链接管理 -->
-      <el-card class="section-card" shadow="never">
-        <template #header>
-          <div class="card-header">
-            <h3>链接管理</h3>
-            <div class="mode-switch">
-              <el-button-group>
-                <el-button 
-                  @click="linkEditMode = 'single'" 
-                  :type="linkEditMode === 'single' ? 'success' : 'default'"
-                  size="small"
-                >
-                  <el-icon><Edit /></el-icon>
-                  单条编辑
-                </el-button>
-                <el-button 
-                  @click="linkEditMode = 'batch'" 
-                  :type="linkEditMode === 'batch' ? 'success' : 'default'"
-                  size="small"
-                >
-                  <el-icon><Operation /></el-icon>
-                  批量编辑
-                </el-button>
-              </el-button-group>
-            </div>
-          </div>
-        </template>
-
-        <!-- 单条编辑模式 -->
-        <div v-if="linkEditMode === 'single'" class="links-table">
-          <div class="table-header">
-            <span class="table-title">链接列表</span>
-            <el-button 
-              @click="addLink" 
-              type="primary" 
-              size="small"
-            >
-              <el-icon><Plus /></el-icon>
-              新增链接
-            </el-button>
-          </div>
-          <el-table :data="links" stripe>
-            <el-table-column label="排序" width="80">
-              <template #default="{ row }">
-                <el-input-number
-                  v-model="row.sort_order"
-                  :min="0"
-                  :max="999"
-                  size="small"
-                  controls-position="right"
-                />
-              </template>
-            </el-table-column>
-            <el-table-column label="标题" min-width="200">
-              <template #default="{ row }">
-                <el-input v-model="row.title" placeholder="请输入链接标题" />
-              </template>
-            </el-table-column>
-            <el-table-column label="URL" min-width="300">
-              <template #default="{ row }">
-                <el-input v-model="row.url" placeholder="请输入链接URL" />
-              </template>
-            </el-table-column>
-            <el-table-column label="状态" width="100">
-              <template #default="{ row }">
-                <el-switch
-                  v-model="row.status"
-                  :active-value="1"
-                  :inactive-value="0"
-                />
-              </template>
-            </el-table-column>
-            <el-table-column label="操作" width="100">
-              <template #default="{ $index }">
-                <el-button
-                  @click="removeLink($index)"
-                  type="danger"
-                  size="small"
-                  :icon="Delete"
-                  plain
-                />
-              </template>
-            </el-table-column>
-          </el-table>
-        </div>
-
-        <!-- 批量编辑模式 -->
-        <div v-else class="batch-edit-container">
-          <div class="batch-mode-header">
-            <span class="batch-mode-title">批量编辑模式</span>
-            <el-tag type="info" size="small">当前共 {{ links.length }} 个链接</el-tag>
-          </div>
-          
-          <!-- 批量导入区域 -->
-          <el-card class="batch-import-card" shadow="never">
-            <template #header>
-              <div class="card-header">
-                <h4>批量导入链接</h4>
-                <el-button @click="showImportHelp = !showImportHelp" type="text" size="small">
-                  <el-icon><QuestionFilled /></el-icon>
-                  导入格式说明
-                </el-button>
+              <!-- 域名配置 -->
+              <div class="domain-config-section">
+                <h4 class="section-title">域名配置</h4>
+                <el-form label-width="100px">
+                  <el-row :gutter="20">
+                    <el-col :span="12">
+                      <el-form-item label="域名类型">
+                        <el-select 
+                          v-model="group.domain_type" 
+                          style="width: 100%"
+                          @change="handleDomainTypeChange($event, 'group', groupIndex)"
+                        >
+                          <el-option 
+                            v-for="domainType in domainTypes" 
+                            :key="domainType.id"
+                            :label="domainType.domain_type" 
+                            :value="domainType.domain_type" 
+                          />
+                          <el-option 
+                            label="+ 新增域名类型"
+                            value="__ADD_NEW__"
+                            style="color: #409eff; font-weight: 600;"
+                          />
+                        </el-select>
+                      </el-form-item>
+                    </el-col>
+                    <el-col :span="12">
+                      <el-form-item label="描述">
+                        <el-input v-model="group.description" placeholder="域名用途描述" />
+                      </el-form-item>
+                    </el-col>
+                  </el-row>
+                  <el-row :gutter="20">
+                    <el-col :span="12">
+                      <el-form-item label="测试域名">
+                        <el-input v-model="group.test_domain" placeholder="https://test.example.com" />
+                      </el-form-item>
+                    </el-col>
+                    <el-col :span="12">
+                      <el-form-item label="正式域名">
+                        <el-input v-model="group.prod_domain" placeholder="https://prod.example.com" />
+                      </el-form-item>
+                    </el-col>
+                  </el-row>
+                  <el-row :gutter="20">
+                    <el-col :span="8">
+                      <el-form-item label="一级目录">
+                        <el-input v-model="group.first_level" placeholder="一级目录" />
+                      </el-form-item>
+                    </el-col>
+                    <el-col :span="8">
+                      <el-form-item label="二级目录">
+                        <el-input v-model="group.second_level" placeholder="二级目录" />
+                      </el-form-item>
+                    </el-col>
+                    <el-col :span="8">
+                      <el-form-item label="三级目录">
+                        <el-input v-model="group.third_level" placeholder="三级目录" />
+                      </el-form-item>
+                    </el-col>
+                  </el-row>
+                </el-form>
               </div>
-            </template>
-            
-            <div v-if="showImportHelp" class="import-help">
-              <el-alert
-                title="导入格式说明"
-                type="info"
-                :closable="false"
-                show-icon
-              >
-                <template #default>
-                  <p>请按以下格式输入链接信息，每行一个链接：</p>
-                  <p><strong>格式：</strong> 标题 URL 排序(可选)</p>
-                  <p><strong>说明：</strong> 用单个或多个空格分隔，标题可以包含空格</p>
-                  <p><strong>示例：</strong></p>
-                  <pre>投流链接 /pages/readerPage/readerPage?id=123 1
-退出登录 /pages/mine/mine 2
-首页链接 /pages/index/index</pre>
-                </template>
-              </el-alert>
-            </div>
 
-            <el-form label-width="100px">
-              <el-form-item label="导入内容">
-                <el-input
-                  v-model="batchImportText"
-                  type="textarea"
-                  :rows="8"
-                  placeholder="请输入链接信息，每行一个链接&#10;格式：标题 URL 排序(可选)&#10;示例：投流链接 /pages/readerPage/readerPage?id=123 1"
-                />
-              </el-form-item>
-              <el-form-item>
-                <el-button @click="parseBatchImport" type="primary">
-                  <el-icon><DocumentAdd /></el-icon>
-                  解析并导入
-                </el-button>
-                <el-button @click="clearBatchImport" type="default">
-                  <el-icon><RefreshLeft /></el-icon>
-                  清空
-                </el-button>
-              </el-form-item>
-            </el-form>
-          </el-card>
-
-          <!-- 批量操作区域 -->
-          <el-card class="batch-operations-card" shadow="never">
-            <template #header>
-              <div class="card-header">
-                <h4>批量操作</h4>
-                <div class="batch-actions">
-                  <el-button
-                    @click="selectAllLinks"
-                    :disabled="links.length === 0"
+              <!-- 链接管理 -->
+              <div class="links-section">
+                <div class="links-header">
+                  <h4 class="section-title">链接管理</h4>
+                  <el-button 
+                    @click="addLinkToGroup(groupIndex)" 
+                    type="primary" 
                     size="small"
                   >
-                    全选
-                  </el-button>
-                  <el-button
-                    @click="selectNoneLinks"
-                    :disabled="selectedLinks.length === 0"
-                    size="small"
-                  >
-                    取消全选
-                  </el-button>
-                  <el-button
-                    @click="batchUpdateStatus(1)"
-                    :disabled="selectedLinks.length === 0"
-                    type="success"
-                    size="small"
-                    plain
-                  >
-                    <el-icon><Check /></el-icon>
-                    批量启用
-                  </el-button>
-                  <el-button
-                    @click="batchUpdateStatus(0)"
-                    :disabled="selectedLinks.length === 0"
-                    type="warning"
-                    size="small"
-                    plain
-                  >
-                    <el-icon><Close /></el-icon>
-                    批量禁用
-                  </el-button>
-                  <el-button
-                    @click="batchDeleteLinks"
-                    :disabled="selectedLinks.length === 0"
-                    type="danger"
-                    size="small"
-                    plain
-                  >
-                    <el-icon><Delete /></el-icon>
-                    批量删除
+                    <el-icon><Plus /></el-icon>
+                    新增链接
                   </el-button>
                 </div>
+                
+                <el-table :data="group.links" stripe>
+                  <el-table-column label="排序" width="80">
+                    <template #default="{ row }">
+                      <el-input-number
+                        v-model="row.sort_order"
+                        :min="0"
+                        :max="999"
+                        size="small"
+                        controls-position="right"
+                      />
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="标题" min-width="200">
+                    <template #default="{ row }">
+                      <el-input v-model="row.title" placeholder="请输入链接标题" />
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="URL" min-width="300">
+                    <template #default="{ row }">
+                      <el-input v-model="row.url" placeholder="请输入链接URL" />
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="域名类型" width="150">
+                    <template #default="{ row, $index }">
+                      <el-select 
+                        v-model="row.domain_type" 
+                        style="width: 100%"
+                        @change="handleDomainTypeChange($event, 'link', groupIndex, $index)"
+                      >
+                        <el-option 
+                          v-for="domainType in domainTypes" 
+                          :key="domainType.id"
+                          :label="domainType.domain_type" 
+                          :value="domainType.domain_type" 
+                        />
+                        <el-option 
+                          label="+ 新增域名类型"
+                          value="__ADD_NEW__"
+                          style="color: #409eff; font-weight: 600;"
+                        />
+                      </el-select>
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="状态" width="100">
+                    <template #default="{ row }">
+                      <el-switch
+                        v-model="row.status"
+                        :active-value="1"
+                        :inactive-value="0"
+                      />
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="操作" width="100">
+                    <template #default="{ $index }">
+                      <el-button
+                        @click="removeLinkFromGroup(groupIndex, $index)"
+                        type="danger"
+                        size="small"
+                        :icon="Delete"
+                        plain
+                      />
+                    </template>
+                  </el-table-column>
+                </el-table>
               </div>
-            </template>
-
-            <div class="batch-table">
-              <el-table 
-                :data="links" 
-                stripe 
-                @selection-change="handleSelectionChange"
-                :row-key="(row) => row.id || row._tempId"
-              >
-                <el-table-column type="selection" width="55" />
-                <el-table-column label="排序" width="100">
-                  <template #default="{ row }">
-                    <el-input-number
-                      v-model="row.sort_order"
-                      :min="0"
-                      :max="999"
-                      size="small"
-                      controls-position="right"
-                    />
-                  </template>
-                </el-table-column>
-                <el-table-column label="标题" min-width="200">
-                  <template #default="{ row }">
-                    <el-input v-model="row.title" placeholder="请输入链接标题" size="small" />
-                  </template>
-                </el-table-column>
-                <el-table-column label="URL" min-width="300">
-                  <template #default="{ row }">
-                    <el-input v-model="row.url" placeholder="请输入链接URL" size="small" />
-                  </template>
-                </el-table-column>
-                <el-table-column label="状态" width="100">
-                  <template #default="{ row }">
-                    <el-switch
-                      v-model="row.status"
-                      :active-value="1"
-                      :inactive-value="0"
-                      size="small"
-                    />
-                  </template>
-                </el-table-column>
-                <el-table-column label="操作" width="100">
-                  <template #default="{ $index }">
-                    <el-button
-                      @click="removeLink($index)"
-                      type="danger"
-                      size="small"
-                      :icon="Delete"
-                      plain
-                    />
-                  </template>
-                </el-table-column>
-              </el-table>
-            </div>
-          </el-card>
+            </el-card>
+          </div>
         </div>
       </el-card>
     </div>
@@ -432,29 +269,66 @@
         </template>
       </el-result>
     </div>
+
+    <!-- 新增域名类型对话框 -->
+    <el-dialog 
+      v-model="showAddDomainTypeDialog" 
+      title="新增域名类型" 
+      width="500px"
+      :before-close="() => showAddDomainTypeDialog = false"
+    >
+      <el-form 
+        ref="domainTypeFormRef" 
+        :model="newDomainTypeForm" 
+        label-width="100px"
+        :rules="{
+          domain_type: [
+            { required: true, message: '请输入域名类型', trigger: 'blur' },
+            { min: 1, max: 50, message: '域名类型长度应在1到50个字符', trigger: 'blur' }
+          ]
+        }"
+      >
+        <el-form-item label="域名类型" prop="domain_type">
+          <el-input 
+            v-model="newDomainTypeForm.domain_type" 
+            placeholder="请输入域名类型，如：default、order、claim"
+            maxlength="50"
+            show-word-limit
+          />
+        </el-form-item>
+        <el-form-item label="描述">
+          <el-input 
+            v-model="newDomainTypeForm.description" 
+            placeholder="请输入域名类型的描述（可选）"
+            maxlength="200"
+            show-word-limit
+          />
+        </el-form-item>
+      </el-form>
+      
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="showAddDomainTypeDialog = false">取消</el-button>
+          <el-button type="primary" @click="addNewDomainType">确定</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { ref, reactive, onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   ArrowLeft,
   Check,
   Plus,
-  Delete,
-  Edit,
-  Operation,
-  QuestionFilled,
-  DocumentAdd,
-  RefreshLeft,
-  Close
+  Delete
 } from '@element-plus/icons-vue'
-import { miniprogramAPI, categoryAPI, domainConfigAPI, linkAPI } from '@/api'
+import { miniprogramAPI, categoryAPI, domainConfigAPI, domainTypeAPI, linkAPI } from '@/api'
 
 const router = useRouter()
-const route = useRoute()
 
 // Props
 const props = defineProps({
@@ -469,6 +343,7 @@ const loading = ref(true)
 const saving = ref(false)
 const miniprogram = ref(null)
 const categories = ref([])
+const domainTypes = ref([])
 
 // 表单数据
 const basicForm = reactive({
@@ -479,14 +354,16 @@ const basicForm = reactive({
   status: 1
 })
 
-const domainConfigs = ref([])
-const links = ref([])
+// 新增域名类型对话框
+const showAddDomainTypeDialog = ref(false)
+const domainTypeFormRef = ref(null)
+const newDomainTypeForm = reactive({
+  domain_type: '',
+  description: ''
+})
 
-// 批量编辑相关数据
-const linkEditMode = ref('single') // 'single' 或 'batch'
-const batchImportText = ref('')
-const showImportHelp = ref(false)
-const selectedLinks = ref([])
+// 域名链接组合数据
+const domainLinkGroups = ref([])
 let tempIdCounter = 0
 
 // 方法
@@ -495,9 +372,10 @@ const loadData = async () => {
     loading.value = true
     
     // 并行加载数据
-    const [miniprogramData, categoriesData] = await Promise.all([
+    const [miniprogramData, categoriesData, domainTypesData] = await Promise.all([
       miniprogramAPI.getMiniprogram(props.id),
-      categoryAPI.getCategories()
+      categoryAPI.getCategories(),
+      domainTypeAPI.getDomainTypesByMiniprogram(props.id)
     ])
     
     if (!miniprogramData) {
@@ -506,6 +384,7 @@ const loadData = async () => {
     
     miniprogram.value = miniprogramData
     categories.value = categoriesData
+    domainTypes.value = domainTypesData
     
     // 填充基本信息表单
     Object.assign(basicForm, {
@@ -516,12 +395,38 @@ const loadData = async () => {
       status: miniprogramData.status
     })
     
-    // 设置域名配置和链接
-    domainConfigs.value = miniprogramData.domain_configs || []
-    links.value = (miniprogramData.links || []).map(link => ({
-      ...link,
-      _tempId: link.id || `temp_${++tempIdCounter}`
-    }))
+    // 组织域名链接组合数据
+    const domainConfigs = miniprogramData.domain_configs || []
+    const links = miniprogramData.links || []
+    
+    // 如果有域名配置，按域名配置组织
+    if (domainConfigs.length > 0) {
+      domainLinkGroups.value = domainConfigs.map(config => ({
+        ...config,
+        links: links.filter(link => link.domain_type === config.domain_type).map(link => ({
+          ...link,
+          _tempId: link.id || `temp_${++tempIdCounter}`
+        })) || []
+      }))
+    } else {
+      // 如果没有域名配置，创建一个默认组
+      domainLinkGroups.value = [{
+        miniprogram_id: props.id,
+        domain_type: 'default',
+        test_domain: '',
+        prod_domain: '',
+        first_level: '',
+        second_level: '',
+        third_level: '',
+        description: '默认域名配置',
+        status: 1,
+        _isNew: true,
+        links: links.map(link => ({
+          ...link,
+          _tempId: link.id || `temp_${++tempIdCounter}`
+        }))
+      }]
+    }
     
   } catch (error) {
     ElMessage.error('加载数据失败')
@@ -531,8 +436,8 @@ const loadData = async () => {
   }
 }
 
-const addDomainConfig = () => {
-  domainConfigs.value.push({
+const addDomainLinkGroup = () => {
+  domainLinkGroups.value.push({
     miniprogram_id: props.id,
     domain_type: 'default',
     test_domain: '',
@@ -542,22 +447,32 @@ const addDomainConfig = () => {
     third_level: '',
     description: '',
     status: 1,
-    _isNew: true
+    _isNew: true,
+    links: []
   })
 }
 
-const removeDomainConfig = async (index) => {
-  const config = domainConfigs.value[index]
+const removeDomainLinkGroup = async (groupIndex) => {
+  const group = domainLinkGroups.value[groupIndex]
   
-  if (config.id && !config._isNew) {
+  if (group.id && !group._isNew) {
     try {
-      await ElMessageBox.confirm('确定要删除这个域名配置吗？', '确认删除', {
+      await ElMessageBox.confirm('确定要删除这个域名链接组吗？这将同时删除其下的所有链接。', '确认删除', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning',
       })
       
-      await domainConfigAPI.deleteDomainConfig(config.id)
+      // 删除域名配置
+      await domainConfigAPI.deleteDomainConfig(group.id)
+      
+      // 删除相关链接
+      for (const link of group.links) {
+        if (link.id && !link._isNew) {
+          await linkAPI.deleteLink(link.id)
+        }
+      }
+      
       ElMessage.success('删除成功')
     } catch (error) {
       if (error !== 'cancel') {
@@ -569,23 +484,26 @@ const removeDomainConfig = async (index) => {
     }
   }
   
-  domainConfigs.value.splice(index, 1)
+  domainLinkGroups.value.splice(groupIndex, 1)
 }
 
-const addLink = () => {
-  links.value.push({
+const addLinkToGroup = (groupIndex) => {
+  const group = domainLinkGroups.value[groupIndex]
+  group.links.push({
     miniprogram_id: props.id,
     title: '',
     url: '',
-    sort_order: links.value.length,
+    domain_type: group.domain_type || (domainTypes.value.length > 0 ? domainTypes.value[0].domain_type : 'default'),
+    sort_order: group.links.length,
     status: 1,
     _isNew: true,
     _tempId: `temp_${++tempIdCounter}`
   })
 }
 
-const removeLink = async (index) => {
-  const link = links.value[index]
+const removeLinkFromGroup = async (groupIndex, linkIndex) => {
+  const group = domainLinkGroups.value[groupIndex]
+  const link = group.links[linkIndex]
   
   if (link.id && !link._isNew) {
     try {
@@ -607,7 +525,7 @@ const removeLink = async (index) => {
     }
   }
   
-  links.value.splice(index, 1)
+  group.links.splice(linkIndex, 1)
 }
 
 const saveAll = async () => {
@@ -622,42 +540,53 @@ const saveAll = async () => {
       status: basicForm.status
     })
     
-    // 2. 保存域名配置
-    for (const config of domainConfigs.value) {
+    // 2. 保存域名链接组合
+    for (const group of domainLinkGroups.value) {
       const configData = {
         miniprogram_id: props.id,
-        domain_type: config.domain_type,
-        test_domain: config.test_domain,
-        prod_domain: config.prod_domain,
-        first_level: config.first_level,
-        second_level: config.second_level,
-        third_level: config.third_level,
-        description: config.description,
-        status: config.status || 1
+        domain_type: group.domain_type,
+        test_domain: group.test_domain,
+        prod_domain: group.prod_domain,
+        first_level: group.first_level,
+        second_level: group.second_level,
+        third_level: group.third_level,
+        description: group.description,
+        status: group.status || 1
       }
       
-      if (config._isNew || !config.id) {
-        await domainConfigAPI.createDomainConfig(configData)
+      let domainConfigId = group.id
+      
+      // 保存域名配置
+      if (group._isNew || !group.id) {
+        const result = await domainConfigAPI.createDomainConfig(configData)
+        domainConfigId = result.id
+        group.id = domainConfigId
       } else {
-        await domainConfigAPI.updateDomainConfig(config.id, configData)
-      }
-    }
-    
-    // 3. 保存链接
-    for (const link of links.value) {
-      const linkData = {
-        miniprogram_id: props.id,
-        title: link.title,
-        url: link.url,
-        sort_order: link.sort_order,
-        status: (link.status !== undefined && link.status !== null) ? link.status : 1
+        await domainConfigAPI.updateDomainConfig(group.id, configData)
       }
       
-      if (link._isNew || !link.id) {
-        await linkAPI.createLink(linkData)
-      } else {
-        await linkAPI.updateLink(link.id, linkData)
+      // 保存该组的链接
+      for (const link of group.links) {
+        const linkData = {
+          miniprogram_id: props.id,
+          title: link.title,
+          url: link.url,
+          domain_type: link.domain_type,
+          sort_order: link.sort_order,
+          status: (link.status !== undefined && link.status !== null) ? link.status : 1
+        }
+        
+        if (link._isNew || !link.id) {
+          const result = await linkAPI.createLink(linkData)
+          link.id = result.id
+          link._isNew = false // 清除新建标记
+        } else {
+          await linkAPI.updateLink(link.id, linkData)
+        }
       }
+      
+      // 清除组的新建标记
+      group._isNew = false
     }
     
     ElMessage.success('保存成功')
@@ -677,156 +606,96 @@ const goBack = () => {
   router.back()
 }
 
-// 批量编辑相关方法
-const parseBatchImport = () => {
-  if (!batchImportText.value.trim()) {
-    ElMessage.warning('请输入链接内容')
-    return
-  }
-
-  const lines = batchImportText.value.trim().split('\n')
-  const newLinks = []
-  const errors = []
-
-  lines.forEach((line, index) => {
-    const trimmedLine = line.trim()
-    if (!trimmedLine) return
-
-    // 按一个或多个空格分割
-    const parts = trimmedLine.split(/\s+/)
-    if (parts.length < 2) {
-      errors.push(`第 ${index + 1} 行格式错误，至少需要标题和URL：${trimmedLine}`)
-      return
-    }
-
-    let title, url, sortOrder
-
-    // 检查最后一个元素是否是数字（排序）
-    const lastPart = parts[parts.length - 1]
-    const isLastPartNumber = !isNaN(parseInt(lastPart)) && isFinite(lastPart)
-
-    if (isLastPartNumber && parts.length >= 3) {
-      // 格式：标题 URL 排序
-      sortOrder = parseInt(lastPart)
-      url = parts[parts.length - 2]
-      title = parts.slice(0, -2).join(' ')
-    } else {
-      // 格式：标题 URL
-      url = parts[parts.length - 1]
-      title = parts.slice(0, -1).join(' ')
-      sortOrder = links.value.length + newLinks.length
-    }
-
-    if (!title.trim() || !url.trim()) {
-      errors.push(`第 ${index + 1} 行标题或URL为空`)
-      return
-    }
-
-    newLinks.push({
-      miniprogram_id: props.id,
-      title: title.trim(),
-      url: url.trim(),
-      sort_order: isNaN(sortOrder) ? links.value.length + newLinks.length : sortOrder,
-      status: 1,
-      _isNew: true,
-      _tempId: `temp_${++tempIdCounter}`
-    })
-  })
-
-  if (errors.length > 0) {
-    ElMessage.error(`解析出错：\n${errors.join('\n')}`)
-    return
-  }
-
-  if (newLinks.length === 0) {
-    ElMessage.warning('没有有效的链接数据')
-    return
-  }
-
-  // 添加新链接到现有链接列表
-  links.value.push(...newLinks)
-  ElMessage.success(`成功导入 ${newLinks.length} 个链接`)
-  
-  // 清空导入文本
-  batchImportText.value = ''
+// 新增域名类型相关方法
+const openAddDomainTypeDialog = () => {
+  newDomainTypeForm.domain_type = ''
+  newDomainTypeForm.description = ''
+  showAddDomainTypeDialog.value = true
 }
 
-const clearBatchImport = () => {
-  batchImportText.value = ''
-  ElMessage.success('已清空导入内容')
-}
-
-const handleSelectionChange = (selection) => {
-  selectedLinks.value = selection
-}
-
-const selectAllLinks = () => {
-  // 由于 el-table 的限制，我们通过 ref 来触发全选
-  // 这里我们可以模拟全选效果
-  selectedLinks.value = [...links.value]
-}
-
-const selectNoneLinks = () => {
-  selectedLinks.value = []
-}
-
-const batchUpdateStatus = (status) => {
-  if (selectedLinks.value.length === 0) {
-    ElMessage.warning('请先选择要操作的链接')
-    return
-  }
-
-  selectedLinks.value.forEach(link => {
-    link.status = status
-  })
-
-  ElMessage.success(`已${status === 1 ? '启用' : '禁用'} ${selectedLinks.value.length} 个链接`)
-}
-
-const batchDeleteLinks = async () => {
-  if (selectedLinks.value.length === 0) {
-    ElMessage.warning('请先选择要删除的链接')
-    return
-  }
-
+const addNewDomainType = async () => {
   try {
-    await ElMessageBox.confirm(
-      `确定要删除选中的 ${selectedLinks.value.length} 个链接吗？此操作不可恢复。`,
-      '确认批量删除',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning',
-      }
-    )
-
-    // 删除已存在的链接
-    const existingLinks = selectedLinks.value.filter(link => link.id && !link._isNew)
-    for (const link of existingLinks) {
-      try {
-        await linkAPI.deleteLink(link.id)
-      } catch (error) {
-        ElMessage.error(`删除链接 "${link.title}" 失败`)
-        return
-      }
+    // 表单验证
+    if (!domainTypeFormRef.value) {
+      return
     }
+    
+    const valid = await domainTypeFormRef.value.validate()
+    if (!valid) {
+      return
+    }
+    
+    // 检查是否已存在相同的域名类型
+    const existingType = domainTypes.value.find(type => 
+      type.domain_type === newDomainTypeForm.domain_type.trim()
+    )
+    
+    if (existingType) {
+      ElMessage.error('该域名类型已存在')
+      return
+    }
+    
+    // 保存新的域名类型
+    const result = await domainTypeAPI.createDomainType({
+      miniprogram_id: props.id,
+      domain_type: newDomainTypeForm.domain_type.trim(),
+      description: newDomainTypeForm.description.trim()
+    })
+    
+    // 添加到本地数组
+    domainTypes.value.push(result)
+    
+    ElMessage.success('新增域名类型成功')
+    showAddDomainTypeDialog.value = false
+    
+    return result.domain_type
+    
+  } catch (error) {
+    ElMessage.error('新增域名类型失败')
+    console.error(error)
+  }
+}
 
-    // 从列表中移除所有选中的链接
-    selectedLinks.value.forEach(selectedLink => {
-      const index = links.value.findIndex(link => 
-        link.id ? link.id === selectedLink.id : link._tempId === selectedLink._tempId
-      )
-      if (index !== -1) {
-        links.value.splice(index, 1)
+// 处理域名类型选择变化
+const handleDomainTypeChange = async (value, type, groupIndex, linkIndex) => {
+  if (value === '__ADD_NEW__') {
+    // 记录当前选择的位置和原始值
+    const currentSelection = { type, groupIndex, linkIndex }
+    let originalValue = ''
+    
+    // 获取原始值并暂时恢复
+    if (type === 'group') {
+      originalValue = domainLinkGroups.value[groupIndex].domain_type
+      domainLinkGroups.value[groupIndex].domain_type = originalValue || (domainTypes.value.length > 0 ? domainTypes.value[0].domain_type : '')
+    } else if (type === 'link') {
+      originalValue = domainLinkGroups.value[groupIndex].links[linkIndex].domain_type
+      domainLinkGroups.value[groupIndex].links[linkIndex].domain_type = originalValue || (domainTypes.value.length > 0 ? domainTypes.value[0].domain_type : '')
+    }
+    
+    // 保存当前domainTypes数量，用于判断是否新增了域名类型
+    const originalDomainTypesCount = domainTypes.value.length
+    
+    // 打开新增对话框
+    openAddDomainTypeDialog()
+    
+    // 监听对话框关闭事件
+    const unwatch = watch(showAddDomainTypeDialog, (newVal) => {
+      if (!newVal) {
+        // 对话框关闭时检查是否新增了域名类型
+        if (domainTypes.value.length > originalDomainTypesCount) {
+          // 有新增的域名类型，设置为新增的域名类型
+          const newDomainType = domainTypes.value[domainTypes.value.length - 1]
+          
+          if (currentSelection.type === 'group') {
+            domainLinkGroups.value[currentSelection.groupIndex].domain_type = newDomainType.domain_type
+          } else if (currentSelection.type === 'link') {
+            domainLinkGroups.value[currentSelection.groupIndex].links[currentSelection.linkIndex].domain_type = newDomainType.domain_type
+          }
+        }
+        
+        unwatch()
       }
     })
-
-    ElMessage.success(`成功删除 ${selectedLinks.value.length} 个链接`)
-    selectedLinks.value = []
-  } catch (error) {
-    if (error !== 'cancel') {
-      ElMessage.error('批量删除失败')
-    }
   }
 }
 
@@ -903,25 +772,30 @@ onMounted(() => {
   font-size: 18px;
 }
 
-.domain-configs {
+.domain-link-groups {
   display: flex;
   flex-direction: column;
   gap: 20px;
   padding: 20px;
 }
 
-.domain-config-item {
+.domain-link-group {
   border: 2px solid #f0f0f0;
   border-radius: 8px;
   overflow: hidden;
   transition: border-color 0.3s ease;
 }
 
-.domain-config-item:hover {
+.domain-link-group:hover {
   border-color: #409eff;
 }
 
-.config-header {
+.group-card {
+  border: none;
+  box-shadow: none;
+}
+
+.group-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -930,95 +804,33 @@ onMounted(() => {
   border-bottom: 1px solid #e9ecef;
 }
 
-.config-title {
+.group-title {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.links-table {
-  margin-top: 10px;
-  padding: 0 20px 20px;
+.domain-config-section {
+  padding: 20px;
+  border-bottom: 1px solid #ebeef5;
 }
 
-.table-header {
+.links-section {
+  padding: 20px;
+}
+
+.section-title {
+  margin: 0 0 15px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.links-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 15px;
-  padding: 12px 16px;
-  background: #f8f9fa;
-  border: 1px solid #e9ecef;
-  border-radius: 6px;
-}
-
-.table-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #495057;
-}
-
-.batch-edit-container {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  padding: 20px;
-}
-
-.batch-mode-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  background: #f8f9fa;
-  border: 1px solid #e9ecef;
-  border-radius: 6px;
-  margin-bottom: 20px;
-}
-
-.batch-mode-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #495057;
-}
-
-.batch-import-card,
-.batch-operations-card {
-  border: 2px solid #e4e7ed;
-  background: #f9f9f9;
-  border-radius: 8px;
-}
-
-.batch-import-card .card-header h4,
-.batch-operations-card .card-header h4 {
-  margin: 0;
-  color: #303133;
-  font-weight: 600;
-  font-size: 16px;
-}
-
-.import-help {
-  margin-bottom: 20px;
-}
-
-.import-help pre {
-  background: #f0f0f0;
-  padding: 10px;
-  border-radius: 4px;
-  font-family: 'Courier New', monospace;
-  font-size: 12px;
-  line-height: 1.5;
-  margin: 8px 0;
-}
-
-.batch-actions {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.batch-table {
-  margin-top: 10px;
 }
 
 /* 按钮层级样式 */
@@ -1050,18 +862,6 @@ onMounted(() => {
   border-color: #67c23a;
 }
 
-:deep(.el-button--success.is-plain) {
-  color: #67c23a;
-  background: #f0f9ff;
-  border-color: #67c23a;
-}
-
-:deep(.el-button--warning.is-plain) {
-  color: #e6a23c;
-  background: #fdf6ec;
-  border-color: #e6a23c;
-}
-
 :deep(.el-button--danger.is-plain) {
   color: #f56c6c;
   background: #fef0f0;
@@ -1076,27 +876,19 @@ onMounted(() => {
   text-align: left;
 }
 
-/* 批量编辑相关样式 */
-.mode-switch {
+/* 新增域名类型对话框样式 */
+.dialog-footer {
   display: flex;
-  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
 }
 
-:deep(.batch-import-card .el-card__header) {
-  background-color: #f0f9ff;
-  border-bottom: 1px solid #e1f5fe;
+/* 新增域名类型选项样式 */
+:deep(.el-select-dropdown__item) {
+  transition: all 0.3s ease;
 }
 
-:deep(.batch-operations-card .el-card__header) {
-  background-color: #f3f4f6;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-:deep(.batch-import-card .el-card__body) {
-  padding: 20px;
-}
-
-:deep(.batch-operations-card .el-card__body) {
-  padding: 20px;
+:deep(.el-select-dropdown__item:hover) {
+  background-color: #f5f7fa;
 }
 </style> 

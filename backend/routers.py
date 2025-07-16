@@ -9,6 +9,7 @@ from database import get_db
 categories_router = APIRouter(prefix="/api/categories", tags=["categories"])
 miniprograms_router = APIRouter(prefix="/api/miniprograms", tags=["miniprograms"])
 domain_configs_router = APIRouter(prefix="/api/domain-configs", tags=["domain-configs"])
+domain_types_router = APIRouter(prefix="/api/domain-types", tags=["domain-types"])
 links_router = APIRouter(prefix="/api/links", tags=["links"])
 
 # 分类路由
@@ -156,6 +157,54 @@ def delete_domain_config(config_id: int, db: Session = Depends(get_db)):
     if not success:
         raise HTTPException(status_code=404, detail="域名配置不存在")
     return {"message": "域名配置删除成功"}
+
+# 域名类型路由
+@domain_types_router.get("/miniprogram/{miniprogram_id}", response_model=List[schemas.DomainType])
+def get_domain_types_by_miniprogram(miniprogram_id: str, db: Session = Depends(get_db)):
+    """获取小程序的所有域名类型"""
+    domain_types = crud.DomainTypeCRUD.get_domain_types_by_miniprogram(db, miniprogram_id=miniprogram_id)
+    return domain_types
+
+@domain_types_router.get("/{domain_type_id}", response_model=schemas.DomainType)
+def get_domain_type(domain_type_id: int, db: Session = Depends(get_db)):
+    """获取单个域名类型"""
+    domain_type = crud.DomainTypeCRUD.get_domain_type(db, domain_type_id=domain_type_id)
+    if domain_type is None:
+        raise HTTPException(status_code=404, detail="域名类型不存在")
+    return domain_type
+
+@domain_types_router.post("/", response_model=schemas.DomainType, status_code=status.HTTP_201_CREATED)
+def create_domain_type(domain_type: schemas.DomainTypeCreate, db: Session = Depends(get_db)):
+    """创建域名类型"""
+    # 检查小程序是否存在
+    db_miniprogram = crud.MiniprogramCRUD.get_miniprogram(db, miniprogram_id=domain_type.miniprogram_id)
+    if not db_miniprogram:
+        raise HTTPException(status_code=400, detail="小程序不存在")
+    
+    # 检查同一小程序下是否已存在相同的域名类型
+    existing_domain_type = crud.DomainTypeCRUD.get_domain_type_by_type(
+        db, miniprogram_id=domain_type.miniprogram_id, domain_type=domain_type.domain_type
+    )
+    if existing_domain_type:
+        raise HTTPException(status_code=400, detail="该小程序已存在此域名类型")
+    
+    return crud.DomainTypeCRUD.create_domain_type(db=db, domain_type=domain_type)
+
+@domain_types_router.put("/{domain_type_id}", response_model=schemas.DomainType)
+def update_domain_type(domain_type_id: int, domain_type_update: schemas.DomainTypeUpdate, db: Session = Depends(get_db)):
+    """更新域名类型"""
+    db_domain_type = crud.DomainTypeCRUD.update_domain_type(db, domain_type_id=domain_type_id, domain_type_update=domain_type_update)
+    if db_domain_type is None:
+        raise HTTPException(status_code=404, detail="域名类型不存在")
+    return db_domain_type
+
+@domain_types_router.delete("/{domain_type_id}")
+def delete_domain_type(domain_type_id: int, db: Session = Depends(get_db)):
+    """删除域名类型"""
+    success = crud.DomainTypeCRUD.delete_domain_type(db, domain_type_id=domain_type_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="域名类型不存在")
+    return {"message": "域名类型删除成功"}
 
 # 链接路由
 @links_router.get("/miniprogram/{miniprogram_id}", response_model=List[schemas.Link])

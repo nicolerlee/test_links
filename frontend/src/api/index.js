@@ -88,6 +88,25 @@ export const domainConfigAPI = {
   deleteDomainConfig: (configId) => api.delete(`/domain-configs/${configId}`),
 }
 
+// 域名类型API
+export const domainTypeAPI = {
+  // 获取小程序的所有域名类型
+  getDomainTypesByMiniprogram: (miniprogramId) => 
+    api.get(`/domain-types/miniprogram/${miniprogramId}`),
+  
+  // 获取单个域名类型
+  getDomainType: (domainTypeId) => api.get(`/domain-types/${domainTypeId}`),
+  
+  // 创建域名类型
+  createDomainType: (data) => api.post('/domain-types', data),
+  
+  // 更新域名类型
+  updateDomainType: (domainTypeId, data) => api.put(`/domain-types/${domainTypeId}`, data),
+  
+  // 删除域名类型
+  deleteDomainType: (domainTypeId) => api.delete(`/domain-types/${domainTypeId}`),
+}
+
 // 链接API
 export const linkAPI = {
   // 获取小程序的所有链接

@@ -2,11 +2,14 @@
 # 本地启动脚本
 echo "🚀 启动测试管理系统（本地模式）..."
 
-# 确保MySQL容器运行
-echo "📦 启动MySQL数据库..."
-docker-compose up -d mysql
+# 确保Docker运行
+echo "📦 启动Docker..."
+open -a Docker
+echo "⏳ 等待Docker启动..."
+sleep 10
 
-# 等待数据库启动
+echo "🚀 启动数据库..."
+docker-compose up -d
 echo "⏳ 等待数据库启动..."
 sleep 10
 
@@ -28,6 +31,7 @@ fi
 
 echo ""
 echo "📋 启动说明："
+echo "0. 先执行 docker-compose up -d mysql"
 echo "1. 数据库已启动在端口 3307"
 echo "2. 手动启动后端：cd backend && source venv/bin/activate && python main.py"
 echo "3. 手动启动前端：cd .. && cd frontend && npm install && npm run dev"

@@ -32,6 +32,7 @@ class Miniprogram(Base):
     # 关联关系
     category = relationship("Category", back_populates="miniprograms")
     domain_configs = relationship("DomainConfig", back_populates="miniprogram", cascade="all, delete-orphan")
+    domain_types = relationship("DomainType", back_populates="miniprogram", cascade="all, delete-orphan")
     links = relationship("Link", back_populates="miniprogram", cascade="all, delete-orphan")
     
     # 索引
@@ -66,6 +67,24 @@ class DomainConfig(Base):
         Index('uk_miniprogram_domain_type', 'miniprogram_id', 'domain_type', unique=True),
     )
 
+class DomainType(Base):
+    __tablename__ = "domain_types"
+    
+    id = Column(Integer, primary_key=True, autoincrement=True, comment="主键ID")
+    miniprogram_id = Column(String(100), ForeignKey("miniprograms.id", ondelete="CASCADE"), nullable=False, comment="小程序ID")
+    domain_type = Column(String(50), nullable=False, comment="域名类型：default(默认), order(订购), receive(领取), pay(付费)等")
+    created_at = Column(DateTime, default=func.now(), comment="创建时间")
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), comment="更新时间")
+    
+    # 关联关系
+    miniprogram = relationship("Miniprogram", back_populates="domain_types")
+    
+    # 索引和约束
+    __table_args__ = (
+        Index('idx_miniprogram', 'miniprogram_id'),
+        Index('uk_miniprogram_domain_type', 'miniprogram_id', 'domain_type', unique=True),
+    )
+
 class Link(Base):
     __tablename__ = "links"
     
@@ -73,6 +92,7 @@ class Link(Base):
     miniprogram_id = Column(String(100), ForeignKey("miniprograms.id", ondelete="CASCADE"), nullable=False, comment="小程序ID")
     title = Column(String(500), nullable=False, comment="链接标题")
     url = Column(Text, nullable=False, comment="链接URL")
+    domain_type = Column(String(50), comment="域名类型")
     sort_order = Column(Integer, default=0, comment="排序权重")
     status = Column(Integer, default=1, comment="状态：1启用，0禁用")
     created_at = Column(DateTime, default=func.now(), comment="创建时间")
@@ -86,4 +106,5 @@ class Link(Base):
         Index('idx_miniprogram', 'miniprogram_id'),
         Index('idx_status', 'status'),
         Index('idx_sort', 'sort_order'),
+        Index('idx_domain_type', 'domain_type'),
     ) 

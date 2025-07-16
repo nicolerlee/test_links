@@ -18,6 +18,7 @@ class CategoryCRUD:
     def get_category_with_miniprograms(db: Session, category_id: str) -> Optional[models.Category]:
         return db.query(models.Category).options(
             joinedload(models.Category.miniprograms).joinedload(models.Miniprogram.domain_configs),
+            joinedload(models.Category.miniprograms).joinedload(models.Miniprogram.domain_types),
             joinedload(models.Category.miniprograms).joinedload(models.Miniprogram.links)
         ).filter(models.Category.id == category_id).first()
     
@@ -56,6 +57,7 @@ class MiniprogramCRUD:
         return db.query(models.Miniprogram).options(
             joinedload(models.Miniprogram.category),
             joinedload(models.Miniprogram.domain_configs),
+            joinedload(models.Miniprogram.domain_types),
             joinedload(models.Miniprogram.links)
         ).order_by(models.Miniprogram.sort_order).offset(skip).limit(limit).all()
     
@@ -64,6 +66,7 @@ class MiniprogramCRUD:
         return db.query(models.Miniprogram).options(
             joinedload(models.Miniprogram.category),
             joinedload(models.Miniprogram.domain_configs),
+            joinedload(models.Miniprogram.domain_types),
             joinedload(models.Miniprogram.links)
         ).filter(models.Miniprogram.id == miniprogram_id).first()
     
@@ -71,6 +74,7 @@ class MiniprogramCRUD:
     def get_miniprograms_by_category(db: Session, category_id: str) -> List[models.Miniprogram]:
         return db.query(models.Miniprogram).options(
             joinedload(models.Miniprogram.domain_configs),
+            joinedload(models.Miniprogram.domain_types),
             joinedload(models.Miniprogram.links)
         ).filter(models.Miniprogram.category_id == category_id).order_by(models.Miniprogram.sort_order).all()
     
@@ -147,6 +151,55 @@ class DomainConfigCRUD:
         db_config = db.query(models.DomainConfig).filter(models.DomainConfig.id == config_id).first()
         if db_config:
             db.delete(db_config)
+            db.commit()
+            return True
+        return False
+
+# 域名类型CRUD操作
+class DomainTypeCRUD:
+    @staticmethod
+    def get_domain_types_by_miniprogram(db: Session, miniprogram_id: str) -> List[models.DomainType]:
+        return db.query(models.DomainType).filter(
+            models.DomainType.miniprogram_id == miniprogram_id
+        ).all()
+    
+    @staticmethod
+    def get_domain_type(db: Session, domain_type_id: int) -> Optional[models.DomainType]:
+        return db.query(models.DomainType).filter(models.DomainType.id == domain_type_id).first()
+    
+    @staticmethod
+    def get_domain_type_by_type(db: Session, miniprogram_id: str, domain_type: str) -> Optional[models.DomainType]:
+        return db.query(models.DomainType).filter(
+            and_(
+                models.DomainType.miniprogram_id == miniprogram_id,
+                models.DomainType.domain_type == domain_type
+            )
+        ).first()
+    
+    @staticmethod
+    def create_domain_type(db: Session, domain_type: schemas.DomainTypeCreate) -> models.DomainType:
+        db_domain_type = models.DomainType(**domain_type.dict())
+        db.add(db_domain_type)
+        db.commit()
+        db.refresh(db_domain_type)
+        return db_domain_type
+    
+    @staticmethod
+    def update_domain_type(db: Session, domain_type_id: int, domain_type_update: schemas.DomainTypeUpdate) -> Optional[models.DomainType]:
+        db_domain_type = db.query(models.DomainType).filter(models.DomainType.id == domain_type_id).first()
+        if db_domain_type:
+            update_data = domain_type_update.dict(exclude_unset=True)
+            for field, value in update_data.items():
+                setattr(db_domain_type, field, value)
+            db.commit()
+            db.refresh(db_domain_type)
+        return db_domain_type
+    
+    @staticmethod
+    def delete_domain_type(db: Session, domain_type_id: int) -> bool:
+        db_domain_type = db.query(models.DomainType).filter(models.DomainType.id == domain_type_id).first()
+        if db_domain_type:
+            db.delete(db_domain_type)
             db.commit()
             return True
         return False

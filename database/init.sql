@@ -51,12 +51,26 @@ CREATE TABLE IF NOT EXISTS domain_configs (
     INDEX idx_domain_type (domain_type)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='域名配置表';
 
+-- 域名类型表
+CREATE TABLE IF NOT EXISTS domain_types (
+    id INT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
+    miniprogram_id VARCHAR(100) NOT NULL COMMENT '小程序ID',
+    domain_type VARCHAR(50) NOT NULL COMMENT '域名类型：default(默认), order(订购), receive(领取), pay(付费)等',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    
+    FOREIGN KEY (miniprogram_id) REFERENCES miniprograms(id) ON DELETE CASCADE,
+    UNIQUE KEY uk_miniprogram_domain_type (miniprogram_id, domain_type),
+    INDEX idx_miniprogram (miniprogram_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='域名类型表';
+
 -- 链接表
 CREATE TABLE IF NOT EXISTS links (
     id INT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
     miniprogram_id VARCHAR(100) NOT NULL COMMENT '小程序ID',
     title VARCHAR(500) NOT NULL COMMENT '链接标题',
     url TEXT NOT NULL COMMENT '链接URL',
+    domain_type VARCHAR(50) COMMENT '域名类型',
     sort_order INT DEFAULT 0 COMMENT '排序权重',
     status TINYINT DEFAULT 1 COMMENT '状态：1启用，0禁用',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
@@ -65,7 +79,8 @@ CREATE TABLE IF NOT EXISTS links (
     FOREIGN KEY (miniprogram_id) REFERENCES miniprograms(id) ON DELETE CASCADE,
     INDEX idx_miniprogram (miniprogram_id),
     INDEX idx_status (status),
-    INDEX idx_sort (sort_order)
+    INDEX idx_sort (sort_order),
+    INDEX idx_domain_type (domain_type)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='链接表';
 
 -- 插入示例数据
@@ -86,7 +101,15 @@ INSERT INTO domain_configs (miniprogram_id, domain_type, test_domain, prod_domai
 ('novel_douyin_qudu', 'order', 'https://ordertest.funshion.tv', 'https://order.funshion.tv', 'tt', 'qudu', 'order', '订购页面域名'),
 ('novel_douyin_qudu', 'receive', 'https://receivetest.funshion.tv', 'https://receive.funshion.tv', 'tt', 'qudu', 'get', '领取页面域名');
 
+-- 域名类型数据
+INSERT INTO domain_types (miniprogram_id, domain_type) VALUES
+('novel_douyin_qudu', 'default'),
+('novel_douyin_qudu', 'order'),
+('novel_douyin_qudu', 'receive'),
+('novel_kuaishou', 'default'),
+('video_kuaishou', 'default');
+
 -- 链接数据
-INSERT INTO links (miniprogram_id, title, url, sort_order) VALUES
-('novel_douyin_qudu', '投流', '/pages/readerPage/readerPage?cartoon_id=1289686&coopCode=ad&microapp_id=awvsp11da3ibbszd&popularizeId=funtv&si=13023728&promotion_code=jlgg&promotion_ad_id=220480807&num=1', 1),
-('video_kuaishou', '退出登录', '/pages/mine/mine', 1); 
+INSERT INTO links (miniprogram_id, title, url, domain_type, sort_order) VALUES
+('novel_douyin_qudu', '投流', '/pages/readerPage/readerPage?cartoon_id=1289686&coopCode=ad&microapp_id=awvsp11da3ibbszd&popularizeId=funtv&si=13023728&promotion_code=jlgg&promotion_ad_id=220480807&num=1', 'default', 1),
+('video_kuaishou', '退出登录', '/pages/mine/mine', 'default', 1); 

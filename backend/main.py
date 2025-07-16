@@ -1,12 +1,22 @@
+# -*- coding: utf-8 -*-
+import sys
+import os
+
+# 设置默认字符编码
+if sys.version_info >= (3, 0):
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 import uvicorn
 
 from database import engine
 import models
-from routers import categories_router, miniprograms_router, domain_configs_router, links_router
+from routers import categories_router, miniprograms_router, domain_configs_router, domain_types_router, links_router
 
 # 创建数据库表
 models.Base.metadata.create_all(bind=engine)
@@ -19,6 +29,9 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc"
 )
+
+# 设置默认响应类为JSONResponse，确保UTF-8编码
+app.default_response_class = JSONResponse
 
 # 配置CORS中间件
 app.add_middleware(
@@ -33,6 +46,7 @@ app.add_middleware(
 app.include_router(categories_router)
 app.include_router(miniprograms_router)
 app.include_router(domain_configs_router)
+app.include_router(domain_types_router)
 app.include_router(links_router)
 
 # 根路径

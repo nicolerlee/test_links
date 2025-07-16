@@ -59,10 +59,30 @@ class DomainConfig(DomainConfigBase):
     class Config:
         from_attributes = True
 
+# 域名类型模式
+class DomainTypeBase(BaseModel):
+    domain_type: str = Field(..., max_length=50, description="域名类型")
+
+class DomainTypeCreate(DomainTypeBase):
+    miniprogram_id: str = Field(..., max_length=100, description="小程序ID")
+
+class DomainTypeUpdate(BaseModel):
+    domain_type: Optional[str] = Field(None, max_length=50, description="域名类型")
+
+class DomainType(DomainTypeBase):
+    id: int
+    miniprogram_id: str
+    created_at: datetime
+    updated_at: datetime
+    
+    class Config:
+        from_attributes = True
+
 # 链接模式
 class LinkBase(BaseModel):
     title: str = Field(..., max_length=500, description="链接标题")
     url: str = Field(..., description="链接URL")
+    domain_type: Optional[str] = Field(None, max_length=50, description="域名类型")
     sort_order: int = Field(0, description="排序权重")
     status: int = Field(1, description="状态：1启用，0禁用")
 
@@ -72,6 +92,7 @@ class LinkCreate(LinkBase):
 class LinkUpdate(BaseModel):
     title: Optional[str] = Field(None, max_length=500, description="链接标题")
     url: Optional[str] = Field(None, description="链接URL")
+    domain_type: Optional[str] = Field(None, max_length=50, description="域名类型")
     sort_order: Optional[int] = Field(None, description="排序权重")
     status: Optional[int] = Field(None, description="状态：1启用，0禁用")
 
@@ -108,6 +129,7 @@ class Miniprogram(MiniprogramBase):
     updated_at: datetime
     category: Optional[Category] = None
     domain_configs: List[DomainConfig] = []
+    domain_types: List[DomainType] = []
     links: List[Link] = []
     
     class Config:
