@@ -1,31 +1,28 @@
 <template>
   <div class="view-page">
-    <div class="page-header">
-      <div class="header-left">
-        <el-button @click="goBack" :icon="ArrowLeft">返回</el-button>
-        <h2>{{ miniprogram?.name || '查看小程序' }}</h2>
-      </div>
-      <div class="header-actions">
-        <el-button @click="editMiniprogram" type="info">
-          <el-icon><Edit /></el-icon>
-          编辑
-        </el-button>
-      </div>
-    </div>
-
     <div v-if="loading" class="loading-container">
       <el-skeleton :rows="8" animated />
     </div>
 
     <div v-else-if="miniprogram" class="content-area">
+      <!-- 固定头部区域 -->
+      <div class="fixed-header" :class="{ 'fixed': isHeaderFixed }">
+        <div class="header-content">
+          <div class="header-left">
+            <el-button @click="goBack" :icon="ArrowLeft" size="small">返回</el-button>
+            <h2>{{ miniprogram?.name || '查看小程序' }}</h2>
+          </div>
+          <div class="header-right">
+            <!-- PC端显示编辑按钮 -->
+            <el-button v-if="!isMobile" @click="editMiniprogram" type="default">
+              <el-icon><Edit /></el-icon>
+              编辑
+            </el-button>
+          </div>
+        </div>
+      </div>
       <!-- 链接展示 -->
       <el-card v-if="miniprogram.links?.length" class="section-card" shadow="never">
-        <template #header>
-          <div class="card-header">
-            <h3>链接管理</h3>
-            <el-tag>{{ activeLinks.length }} / {{ miniprogram.links.length }} 个链接</el-tag>
-          </div>
-        </template>
 
         <div class="links-section">
           <!-- 环境切换标签 -->
@@ -96,9 +93,20 @@
                     @click="copyLink(getFullUrl(link))"
                     type="primary"
                     size="small"
+                    class="action-btn"
                   >
                     <el-icon><CopyDocument /></el-icon>
                     复制
+                  </el-button>
+                  <el-button
+                    v-if="isLinkEffectivelyActive(link)"
+                    @click="openLink(getFullUrl(link))"
+                    type="success"
+                    size="small"
+                    class="action-btn"
+                  >
+                    <el-icon><TopRight /></el-icon>
+                    跳转
                   </el-button>
                   <div class="qr-code-wrapper" style="position: relative;">
                     <el-button
@@ -107,6 +115,7 @@
                       @mouseleave="hideQrCode(link.id)"
                       type="info"
                       size="small"
+                      class="action-btn"
                     >
                       <el-icon><Share /></el-icon>
                       二维码
@@ -138,9 +147,14 @@
       <!-- 空状态 -->
       <div v-if="!miniprogram.links?.length" class="empty-state">
         <el-empty description="暂无链接数据">
-          <el-button @click="editMiniprogram" type="primary">
+          <!-- PC端显示添加链接按钮 -->
+          <el-button v-if="!isMobile" @click="editMiniprogram" type="primary">
             添加链接
           </el-button>
+          <!-- 移动端显示提示 -->
+          <div v-if="isMobile" class="mobile-tip">
+            <el-tag type="info" size="small">请在PC端添加链接</el-tag>
+          </div>
         </el-empty>
       </div>
     </div>
@@ -156,7 +170,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import {
@@ -186,6 +200,12 @@ const props = defineProps({
 // 响应式数据
 const loading = ref(true)
 const miniprogram = ref(null)
+
+// 页面滚动固定功能
+const isHeaderFixed = ref(false)
+
+// 移动端检测
+const isMobile = ref(false)
 
 // 环境切换
 const activeEnvironment = ref('test')
@@ -251,6 +271,15 @@ onMounted(() => {
   loadData()
   // 监听页面可见性变化
   document.addEventListener('visibilitychange', handleVisibilityChange)
+  // 监听页面滚动
+  window.addEventListener('scroll', handlePageScroll)
+  // 检测移动端
+  if (typeof navigator !== 'undefined') {
+    isMobile.value = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+  } else {
+    console.warn('⚠️ navigator未定义，默认设置为非移动端')
+    isMobile.value = false
+  }
 })
 
 // 清理定时器和事件监听
@@ -263,6 +292,7 @@ onBeforeUnmount(() => {
   
   // 移除事件监听
   document.removeEventListener('visibilitychange', handleVisibilityChange)
+  window.removeEventListener('scroll', handlePageScroll)
 })
 
 
@@ -299,12 +329,28 @@ const copyLink = async (url) => {
   }
 }
 
+const openLink = (url) => {
+  try {
+    window.open(url, '_blank')
+    ElMessage.success('链接已在新窗口打开')
+  } catch (error) {
+    ElMessage.error('打开链接失败')
+    console.error('打开链接失败:', error)
+  }
+}
+
 const editMiniprogram = () => {
   router.push(`/edit/${props.id}`)
 }
 
 const goBack = () => {
   router.back()
+}
+
+// 处理页面滚动
+const handlePageScroll = () => {
+  const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+  isHeaderFixed.value = scrollTop > 100
 }
 
 // 获取完整URL
@@ -424,15 +470,6 @@ const generateQrCode = async (linkId, url) => {
   margin: 0 auto;
 }
 
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #ebeef5;
-}
-
 .header-left {
   display: flex;
   align-items: center;
@@ -443,6 +480,7 @@ const generateQrCode = async (linkId, url) => {
   margin: 0;
   color: #303133;
   font-weight: 600;
+  font-size: 18px;
 }
 
 /* 页面标题样式 */
@@ -475,10 +513,49 @@ const generateQrCode = async (linkId, url) => {
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.08);
 }
 
+/* 固定头部样式 */
+.fixed-header {
+  background: #fff;
+  border-bottom: 1px solid #e4e7ed;
+  padding: 12px 0;
+  margin-bottom: 20px;
+  transition: all 0.3s ease;
+}
+
+.fixed-header.fixed {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 8px 20px;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* 当头部固定时，给内容区域添加顶部边距 */
+.fixed-header.fixed + .content-area {
+  margin-top: 80px;
+}
+
 .content-area {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  transition: margin-top 0.3s ease;
 }
 
 .section-card {
@@ -715,6 +792,10 @@ const generateQrCode = async (linkId, url) => {
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.08);
 }
 
+.mobile-tip {
+  margin-top: 10px;
+}
+
 :deep(.el-card__header) {
   background-color: #fafafa;
   border-bottom: 1px solid #ebeef5;
@@ -814,6 +895,18 @@ const generateQrCode = async (linkId, url) => {
 }
 
 /* 按钮层级样式 */
+.action-btn {
+  padding: 4px 8px !important;
+  font-size: 12px !important;
+  height: 28px !important;
+  line-height: 1 !important;
+}
+
+.action-btn .el-icon {
+  margin-right: 2px;
+  font-size: 12px;
+}
+
 :deep(.el-button--info) {
   background: white;
   border-color: #d1d5db;

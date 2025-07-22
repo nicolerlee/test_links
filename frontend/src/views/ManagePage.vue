@@ -1,9 +1,22 @@
 <template>
   <div class="manage-page">
     <div class="page-header">
-      <h2>H5网页管理</h2>
+      <h2>
+        H5网页管理
+        <el-tag v-if="isMobile" type="warning" size="small" class="mobile-tag">移动端模式</el-tag>
+      </h2>
       <div class="header-actions">
-        <el-dropdown @command="handleCommand">
+        <el-button 
+          @click="refreshAllData" 
+          type="primary" 
+          size="small"
+          :loading="loading"
+        >
+          <el-icon><Refresh /></el-icon>
+          刷新
+        </el-button>
+        <!-- PC端显示设置按钮 -->
+        <el-dropdown v-if="!isMobile" @command="handleCommand">
           <el-button type="info">
             <el-icon><Setting /></el-icon>
             设置
@@ -22,7 +35,13 @@
     </div>
 
     <div class="content-area">
-      <el-tabs v-model="activeTab" type="card" class="category-tabs">
+      <el-tabs 
+        v-model="activeTab" 
+        type="card" 
+        class="category-tabs"
+        @tab-click="handleTabClick"
+        @tab-change="handleTabChange"
+      >
         <el-tab-pane
           v-for="category in categories"
           :key="category.id"
@@ -32,8 +51,9 @@
           <template #label>
             <div class="tab-label" @mouseenter="showDeleteButton(category.id)" @mouseleave="hideDeleteButton(category.id)">
               <span>{{ category.name }}</span>
+              <!-- PC端显示分类删除按钮 -->
               <el-button
-                v-if="hoveredCategory === category.id"
+                v-if="hoveredCategory === category.id && !isMobile"
                 @click.stop="deleteCategory(category)"
                 type="danger"
                 size="small"
@@ -63,7 +83,9 @@
                       <el-icon><View /></el-icon>
                       查看
                     </el-button>
+                    <!-- PC端显示编辑按钮 -->
                     <el-button
+                      v-if="!isMobile"
                       type="warning"
                       size="small"
                       @click="editMiniprogram(miniprogram.id)"
@@ -71,7 +93,9 @@
                       <el-icon><Edit /></el-icon>
                       编辑
                     </el-button>
+                    <!-- PC端显示删除按钮 -->
                     <el-button
+                      v-if="!isMobile"
                       type="danger"
                       size="small"
                       @click="deleteMiniprogram(miniprogram)"
@@ -209,7 +233,8 @@ import {
   ArrowDown,
   View,
   Edit,
-  Delete
+  Delete,
+  Refresh
 } from '@element-plus/icons-vue'
 import { categoryAPI, miniprogramAPI } from '@/api'
 
@@ -219,6 +244,9 @@ const router = useRouter()
 const categories = ref([])
 const activeTab = ref('')
 const loading = ref(false)
+
+// 移动端检测
+const isMobile = ref(false)
 
 // 新建H5网页相关
 const newMiniprogramVisible = ref(false)
@@ -300,11 +328,52 @@ const loadCategories = async () => {
 }
 
 // 监听 activeTab 的变化并保存到 sessionStorage
-watch(activeTab, (newTab) => {
+watch(activeTab, (newTab, oldTab) => {
+  console.log('🔄 Tab切换:', { oldTab, newTab })
   if (newTab) {
     sessionStorage.setItem('managePageActiveTab', newTab);
+    // 强制刷新当前tab的数据
+    refreshCurrentTabData(newTab)
   }
 });
+
+// 添加强制刷新当前tab数据的方法
+const refreshCurrentTabData = async (tabId) => {
+  console.log('🔄 刷新tab数据:', tabId)
+  try {
+    const category = categories.value.find(cat => cat.id === tabId)
+    if (category) {
+      const categoryDetail = await categoryAPI.getCategory(tabId)
+      category.miniprograms = categoryDetail.miniprograms || []
+      console.log('✅ Tab数据已刷新:', category.name, '小程序数量:', category.miniprograms.length)
+    }
+  } catch (error) {
+    console.error('❌ 刷新tab数据失败:', error)
+    ElMessage.error('刷新数据失败')
+  }
+}
+
+// 添加tab点击事件处理
+const handleTabClick = (tab) => {
+  console.log('��️ Tab点击事件:', tab)
+  if (typeof navigator !== 'undefined') {
+    console.log('📱 用户代理:', navigator.userAgent)
+  }
+  console.log('📱 是否为移动设备:', isMobile.value)
+}
+
+// 添加tab切换事件处理
+const handleTabChange = (tabName) => {
+  console.log('🔄 Tab切换事件:', tabName)
+  // 在移动端，可能需要额外的处理
+  if (isMobile.value) {
+    console.log('📱 移动端tab切换，强制刷新数据')
+    // 延迟一点时间确保DOM更新完成
+    setTimeout(() => {
+      refreshCurrentTabData(tabName)
+    }, 100)
+  }
+}
 
 const handleCommand = (command) => {
   if (command === 'new') {
@@ -469,9 +538,33 @@ const resetCategoryForm = () => {
   categoryFormRef.value?.resetFields()
 }
 
+const refreshAllData = async () => {
+  loading.value = true;
+  try {
+    await loadCategories();
+    // 刷新当前激活的tab数据
+    if (activeTab.value) {
+      await refreshCurrentTabData(activeTab.value);
+    }
+    ElMessage.success('数据刷新成功');
+  } catch (error) {
+    ElMessage.error('刷新失败');
+    console.error(error);
+  } finally {
+    loading.value = false;
+  }
+};
+
 // 生命周期
 onMounted(() => {
   loadCategories()
+  // 安全检查navigator是否存在
+  if (typeof navigator !== 'undefined') {
+    isMobile.value = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+  } else {
+    console.warn('⚠️ navigator未定义，默认设置为非移动端')
+    isMobile.value = false
+  }
 })
 </script>
 
@@ -492,8 +585,16 @@ onMounted(() => {
 
 .page-header h2 {
   margin: 0;
+  font-size: 24px;
   color: #303133;
-  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mobile-tag {
+  font-size: 12px;
+  margin-left: 8px;
 }
 
 .content-area {
@@ -614,5 +715,57 @@ onMounted(() => {
 
 :deep(.el-tabs__nav-wrap) {
   overflow: visible;
+}
+
+/* 移动端tab切换优化 */
+@media (max-width: 768px) {
+  :deep(.el-tabs__item) {
+    padding: 8px 12px;
+    font-size: 14px;
+    min-width: 80px;
+    text-align: center;
+  }
+  
+  :deep(.el-tabs__nav-wrap) {
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  
+  :deep(.el-tabs__nav) {
+    flex-wrap: nowrap;
+  }
+  
+  /* 确保移动端点击区域足够大 */
+  :deep(.el-tabs__item) {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+  }
+  
+  /* 移动端tab切换时的视觉反馈 */
+  :deep(.el-tabs__item.is-active) {
+    transform: scale(1.05);
+    transition: transform 0.2s ease;
+  }
+  
+  /* 移动端卡片优化 */
+  .miniprogram-card {
+    margin-bottom: 15px;
+  }
+  
+  .card-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .card-actions .el-button {
+    width: 100%;
+    margin: 0;
+  }
+  
+  /* 移动端网格布局优化 */
+  .miniprogram-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
 }
 </style> 

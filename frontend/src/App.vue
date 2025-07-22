@@ -4,7 +4,7 @@
       <el-header class="app-header">
         <div class="header-content">
           <div class="logo-area">
-            <img src="./assets/logo.svg" alt="" class="logo-img" />
+            <img src="./assets/logo.png" alt="" class="logo-img" />
             <h1 class="system-title">测试管理系统</h1>
           </div>
           <div class="header-actions">

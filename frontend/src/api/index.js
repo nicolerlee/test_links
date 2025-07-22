@@ -12,9 +12,18 @@ const api = axios.create({
 // 请求拦截器
 api.interceptors.request.use(
   (config) => {
+    // 添加vConsole调试日志
+    console.log('📤 API请求:', {
+      method: config.method?.toUpperCase(),
+      url: config.url,
+      data: config.data,
+      params: config.params,
+      headers: config.headers
+    })
     return config
   },
   (error) => {
+    console.error('❌ API请求错误:', error)
     return Promise.reject(error)
   }
 )
@@ -22,10 +31,22 @@ api.interceptors.request.use(
 // 响应拦截器
 api.interceptors.response.use(
   (response) => {
+    // 添加vConsole调试日志
+    console.log('📥 API响应:', {
+      status: response.status,
+      url: response.config.url,
+      data: response.data,
+      headers: response.headers
+    })
     return response.data
   },
   (error) => {
-    console.error('API Error:', error)
+    console.error('❌ API响应错误:', {
+      status: error.response?.status,
+      url: error.config?.url,
+      message: error.message,
+      data: error.response?.data
+    })
     return Promise.reject(error)
   }
 )

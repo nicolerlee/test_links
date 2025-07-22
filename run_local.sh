@@ -33,8 +33,8 @@ echo ""
 echo "📋 启动说明："
 echo "0. 先执行 docker-compose up -d mysql"
 echo "1. 数据库已启动在端口 3307"
-echo "2. 手动启动后端：cd backend && source venv/bin/activate && python main.py"
-echo "3. 手动启动前端：cd .. && cd frontend && npm install && npm run dev"
+echo "2. 手动启动后端：cd backend && source venv/bin/activate && python main.py
+echo "3. 手动启动前端：cd .. && cd frontend && npm install && npm run dev
 echo ""
 echo "🔗 访问地址："
 echo "   前端: http://localhost:3000"  

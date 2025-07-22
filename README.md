@@ -70,6 +70,72 @@ npm run dev
 docker-compose up -d
 ```
 
+## 数据库访问
+
+### 访问Docker容器内部数据库
+
+如果应用数据存储在Docker容器内部，可以通过以下方式访问：
+
+#### 方法1：进入容器并连接MySQL
+```bash
+# 进入Docker容器并连接MySQL
+docker exec -it miniprogram_mysql mysql -u root -ppassword
+
+# 在容器内查看数据库
+mysql> SHOW DATABASES;
+mysql> USE miniprogram_manager;
+mysql> SHOW TABLES;
+mysql> SELECT * FROM miniprograms;
+mysql> SELECT * FROM links;
+```
+
+#### 方法2：直接执行SQL命令
+```bash
+# 查看所有数据库
+docker exec miniprogram_mysql mysql -u root -ppassword -e "SHOW DATABASES;"
+
+# 查看特定数据库的表
+docker exec miniprogram_mysql mysql -u root -ppassword -e "USE miniprogram_manager; SHOW TABLES;"
+
+# 查询数据
+docker exec miniprogram_mysql mysql -u root -ppassword -e "USE miniprogram_manager; SELECT * FROM miniprograms;"
+```
+
+#### 方法3：进入容器shell
+```bash
+# 进入容器shell
+docker exec -it miniprogram_mysql bash
+
+# 在容器内连接MySQL
+mysql -u root -ppassword
+```
+
+#### 方法4：查看容器日志
+```bash
+# 查看MySQL容器日志
+docker logs miniprogram_mysql
+```
+
+### 常用数据库查询
+
+```sql
+-- 查看所有小程序
+SELECT * FROM miniprograms;
+
+-- 查看特定小程序及其链接
+SELECT m.name, c.name as category, l.title, l.url 
+FROM miniprograms m 
+LEFT JOIN categories c ON m.category_id = c.id 
+LEFT JOIN links l ON m.id = l.miniprogram_id 
+WHERE m.id = 'your_miniprogram_id';
+
+-- 查看启用状态的链接
+SELECT * FROM links WHERE status = 1;
+
+-- 查看域名配置
+SELECT * FROM domain_configs;
+```
+
 ## API文档
 
 启动后端服务后，访问 http://localhost:8000/docs 查看自动生成的API文档。

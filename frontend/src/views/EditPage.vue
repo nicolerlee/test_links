@@ -1,23 +1,26 @@
 <template>
   <div class="edit-page">
-    <div class="page-header">
-      <div class="header-left">
-        <el-button @click="goBack" :icon="ArrowLeft">返回</el-button>
-        <h2>编辑 {{ miniprogram?.name || 'H5网页' }}</h2>
-      </div>
-      <div class="header-actions">
-        <el-button @click="saveAll" type="info" :loading="saving">
-          <el-icon><Check /></el-icon>
-          保存所有修改
-        </el-button>
-      </div>
-    </div>
-
     <div v-if="loading" class="loading-container">
       <el-skeleton :rows="8" animated />
     </div>
 
     <div v-else-if="miniprogram" class="content-area">
+      <!-- 固定头部区域 -->
+      <div class="fixed-header" :class="{ 'fixed': isHeaderFixed }">
+        <div class="header-content">
+          <div class="header-left">
+            <el-button @click="goBack" :icon="ArrowLeft" size="small">返回</el-button>
+            <h2>编辑 {{ miniprogram.name }}</h2>
+          </div>
+          <div class="header-right">
+            <el-button @click="saveAll" type="default" :loading="saving">
+              <el-icon><Check /></el-icon>
+              保存所有修改
+            </el-button>
+          </div>
+        </div>
+      </div>
+
       <!-- 小程序基本信息 -->
       <el-card class="section-card" shadow="never">
         <template #header>
@@ -37,15 +40,15 @@
               </el-form-item>
             </el-col>
             <el-col :span="12">
-              <el-form-item label="H5网页名称">
-                <el-input v-model="basicForm.name" />
+              <el-form-item label="H5网页名称" required>
+                <el-input v-model="basicForm.name" placeholder="请输入H5网页名称" />
               </el-form-item>
             </el-col>
           </el-row>
           <el-row :gutter="20">
             <el-col :span="12">
-              <el-form-item label="分类">
-                <el-select v-model="basicForm.category_id" style="width: 100%">
+              <el-form-item label="分类" required>
+                <el-select v-model="basicForm.category_id" style="width: 100%" placeholder="请选择分类">
                   <el-option
                     v-for="category in categories"
                     :key="category.id"
@@ -109,7 +112,9 @@
                     size="small"
                     :icon="Delete"
                     plain
-                  />
+                  >
+                    删除组
+                  </el-button>
                 </div>
               </template>
 
@@ -119,10 +124,11 @@
                 <el-form label-width="100px">
                   <el-row :gutter="20">
                     <el-col :span="12">
-                      <el-form-item label="域名类型">
+                      <el-form-item label="域名类型" required>
                         <el-select 
                           v-model="group.domain_type" 
                           style="width: 100%"
+                          placeholder="请选择域名类型"
                           @change="handleDomainTypeChange($event, 'group', groupIndex)"
                         >
                           <el-option 
@@ -147,24 +153,24 @@
                   </el-row>
                   <el-row :gutter="20">
                     <el-col :span="12">
-                      <el-form-item label="测试域名">
+                      <el-form-item label="测试域名" required>
                         <el-input v-model="group.test_domain" placeholder="https://test.example.com" />
                       </el-form-item>
                     </el-col>
                     <el-col :span="12">
-                      <el-form-item label="正式域名">
+                      <el-form-item label="正式域名" required>
                         <el-input v-model="group.prod_domain" placeholder="https://prod.example.com" />
                       </el-form-item>
                     </el-col>
                   </el-row>
                   <el-row :gutter="20">
                     <el-col :span="8">
-                      <el-form-item label="一级目录">
+                      <el-form-item label="一级目录" required>
                         <el-input v-model="group.first_level" placeholder="一级目录" />
                       </el-form-item>
                     </el-col>
                     <el-col :span="8">
-                      <el-form-item label="二级目录">
+                      <el-form-item label="二级目录" required>
                         <el-input v-model="group.second_level" placeholder="二级目录" />
                       </el-form-item>
                     </el-col>
@@ -181,14 +187,24 @@
               <div class="links-section">
                 <div class="links-header">
                   <h4 class="section-title">链接管理</h4>
-                  <el-button 
-                    @click="addLinkToGroup(groupIndex)" 
-                    type="primary" 
-                    size="small"
-                  >
-                    <el-icon><Plus /></el-icon>
-                    新增链接
-                  </el-button>
+                  <div class="links-actions">
+                    <el-button 
+                      @click="addLinkToGroup(groupIndex)" 
+                      type="primary" 
+                      size="small"
+                    >
+                      <el-icon><Plus /></el-icon>
+                      新增链接
+                    </el-button>
+                    <el-button 
+                      @click="openBatchImportDialog(groupIndex)" 
+                      type="warning" 
+                      size="small"
+                    >
+                      <el-icon><Upload /></el-icon>
+                      批量导入
+                    </el-button>
+                  </div>
                 </div>
                 
                 <el-table :data="group.links" stripe>
@@ -203,21 +219,25 @@
                       />
                     </template>
                   </el-table-column>
-                  <el-table-column label="标题" min-width="200">
+                  <el-table-column label="标题 *" min-width="200">
                     <template #default="{ row }">
                       <el-input v-model="row.title" placeholder="请输入链接标题" />
                     </template>
                   </el-table-column>
-                  <el-table-column label="URL" min-width="300">
+                  <el-table-column label="URL *" min-width="300">
                     <template #default="{ row }">
-                      <el-input v-model="row.url" placeholder="请输入链接URL" />
+                      <el-input 
+                        v-model="row.url" 
+                        placeholder="请输入页面路径，如：/pages/readerPage/readerPage?cartoon_id=123（不包含域名和目录）" 
+                      />
                     </template>
                   </el-table-column>
-                  <el-table-column label="域名类型" width="150">
+                  <el-table-column label="域名类型 *" width="150">
                     <template #default="{ row, $index }">
                       <el-select 
                         v-model="row.domain_type" 
                         style="width: 100%"
+                        placeholder="请选择域名类型"
                         @change="handleDomainTypeChange($event, 'link', groupIndex, $index)"
                       >
                         <el-option 
@@ -313,18 +333,88 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- 批量导入对话框 -->
+        <el-dialog
+      v-model="showBatchImportDialog"
+      title="批量导入链接"
+      width="700px"
+      :before-close="() => showBatchImportDialog = false"
+      class="batch-import-dialog"
+    >
+      <div class="batch-import-content">
+        <div class="import-instructions">
+          <p><strong>格式：</strong>每行一个链接，<code>标题 页面路径</code> 或 <code>标题 完整URL</code></p>
+          <p><small>支持页面路径或完整URL（系统自动提取页面路径）</small></p>
+          <div class="examples-container">
+            <div class="example-section">
+              <p><strong>页面路径示例：</strong></p>
+              <pre>退出登录 /pages/userInfo/userInfo
+支付链接跳转 /pages/testJump/testJump
+阅读页面 /pages/readerPage/readerPage?cartoon_id=123</pre>
+            </div>
+            <div class="example-section">
+              <p><strong>完整URL示例：</strong></p>
+              <pre>退出登录 https://noveltestqd.funshion.tv/tt/qudu/pages/userInfo/userInfo
+支付链接跳转 https://novelprodqd.funshion.tv/tt/qudu/pages/testJump/testJump</pre>
+            </div>
+          </div>
+        </div>
+        
+        <div class="import-textarea">
+          <el-input
+            v-model="batchImportText"
+            type="textarea"
+            :rows="15"
+            placeholder="请输入要导入的链接，每行一个，格式：标题 页面路径 或 标题 完整URL"
+            resize="vertical"
+          />
+        </div>
+        
+        <div class="import-preview" v-if="parsedLinks.length > 0">
+          <h4>预览 ({{ parsedLinks.length }} 个链接)：</h4>
+          <div class="preview-list">
+            <div 
+              v-for="(link, index) in parsedLinks" 
+              :key="index"
+              class="preview-item"
+              :class="{ 'preview-error': link.error }"
+            >
+              <span class="preview-index">{{ index + 1 }}</span>
+              <span class="preview-title">{{ link.title }}</span>
+              <span class="preview-url">{{ link.url }}</span>
+              <span v-if="link.error" class="preview-error-msg">{{ link.error }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="showBatchImportDialog = false">取消</el-button>
+          <el-button 
+            type="primary" 
+            @click="confirmBatchImport"
+            :disabled="parsedLinks.length === 0 || hasImportErrors"
+          >
+            确认导入
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, watch } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   ArrowLeft,
   Check,
   Plus,
-  Delete
+  Delete,
+  Upload
 } from '@element-plus/icons-vue'
 import { miniprogramAPI, categoryAPI, domainConfigAPI, domainTypeAPI, linkAPI } from '@/api'
 
@@ -361,6 +451,16 @@ const newDomainTypeForm = reactive({
   domain_type: '',
   description: ''
 })
+
+// 批量导入对话框
+const showBatchImportDialog = ref(false)
+const batchImportText = ref('')
+const currentImportGroupIndex = ref(-1)
+const parsedLinks = ref([])
+const hasImportErrors = ref(false)
+
+// 页面滚动固定功能
+const isHeaderFixed = ref(false)
 
 // 域名链接组合数据
 const domainLinkGroups = ref([])
@@ -532,6 +632,71 @@ const saveAll = async () => {
   try {
     saving.value = true
     
+    // 验证基本信息
+    if (!basicForm.name.trim()) {
+      ElMessage.error('H5网页名称不能为空')
+      return
+    }
+    
+    if (!basicForm.category_id) {
+      ElMessage.error('请选择分类')
+      return
+    }
+    
+    // 验证域名配置
+    for (let i = 0; i < domainLinkGroups.value.length; i++) {
+      const group = domainLinkGroups.value[i]
+      
+      if (!group.domain_type?.trim()) {
+        ElMessage.error(`第${i + 1}个域名配置的域名类型不能为空`)
+        return
+      }
+      
+      if (!group.test_domain?.trim()) {
+        ElMessage.error(`第${i + 1}个域名配置的测试域名不能为空`)
+        return
+      }
+      
+      if (!group.prod_domain?.trim()) {
+        ElMessage.error(`第${i + 1}个域名配置的正式域名不能为空`)
+        return
+      }
+      
+      if (!group.first_level?.trim()) {
+        ElMessage.error(`第${i + 1}个域名配置的一级目录不能为空`)
+        return
+      }
+      
+      if (!group.second_level?.trim()) {
+        ElMessage.error(`第${i + 1}个域名配置的二级目录不能为空`)
+        return
+      }
+    }
+    
+    // 验证链接数据
+    for (let i = 0; i < domainLinkGroups.value.length; i++) {
+      const group = domainLinkGroups.value[i]
+      
+      for (let j = 0; j < group.links.length; j++) {
+        const link = group.links[j]
+        
+        if (!link.title?.trim()) {
+          ElMessage.error(`第${i + 1}个域名配置的第${j + 1}个链接标题不能为空`)
+          return
+        }
+        
+        if (!link.url?.trim()) {
+          ElMessage.error(`第${i + 1}个域名配置的第${j + 1}个链接URL不能为空`)
+          return
+        }
+        
+        if (!link.domain_type?.trim()) {
+          ElMessage.error(`第${i + 1}个域名配置的第${j + 1}个链接域名类型不能为空`)
+          return
+        }
+      }
+    }
+    
     // 1. 更新基本信息
     await miniprogramAPI.updateMiniprogram(props.id, {
       name: basicForm.name,
@@ -605,6 +770,214 @@ const saveAll = async () => {
 const goBack = () => {
   router.back()
 }
+
+// 处理页面滚动
+const handlePageScroll = () => {
+  const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+  isHeaderFixed.value = scrollTop > 100
+}
+
+// 批量导入相关方法
+const openBatchImportDialog = (groupIndex) => {
+  // 校验基本信息
+  if (!basicForm.name?.trim()) {
+    ElMessage.error('请先填写H5网页名称')
+    return
+  }
+  
+  if (!basicForm.category_id) {
+    ElMessage.error('请先选择分类')
+    return
+  }
+  
+  // 校验当前组的域名配置
+  const group = domainLinkGroups.value[groupIndex]
+  if (!group) {
+    ElMessage.error('未找到对应的域名配置组')
+    return
+  }
+  
+  if (!group.domain_type?.trim()) {
+    ElMessage.error('请先填写域名类型')
+    return
+  }
+  
+  if (!group.test_domain?.trim()) {
+    ElMessage.error('请先填写测试域名')
+    return
+  }
+  
+  if (!group.prod_domain?.trim()) {
+    ElMessage.error('请先填写正式域名')
+    return
+  }
+  
+  if (!group.first_level?.trim()) {
+    ElMessage.error('请先填写一级目录')
+    return
+  }
+  
+  if (!group.second_level?.trim()) {
+    ElMessage.error('请先填写二级目录')
+    return
+  }
+  
+  // 所有校验通过，打开对话框
+  currentImportGroupIndex.value = groupIndex
+  batchImportText.value = ''
+  parsedLinks.value = []
+  hasImportErrors.value = false
+  showBatchImportDialog.value = true
+}
+
+const parseBatchImportText = () => {
+  const lines = batchImportText.value.trim().split('\n')
+  const parsed = []
+  let hasErrors = false
+  
+  // 获取当前组的域名配置
+  const currentGroup = domainLinkGroups.value[currentImportGroupIndex.value]
+  
+  lines.forEach((line, index) => {
+    const trimmedLine = line.trim()
+    if (!trimmedLine) return
+    
+    // 查找第一个空格的位置
+    const firstSpaceIndex = trimmedLine.indexOf(' ')
+    if (firstSpaceIndex === -1) {
+      parsed.push({
+        title: '',
+        url: trimmedLine,
+        error: '格式错误：缺少标题和URL之间的空格'
+      })
+      hasErrors = true
+      return
+    }
+    
+    const title = trimmedLine.substring(0, firstSpaceIndex).trim()
+    let url = trimmedLine.substring(firstSpaceIndex + 1).trim()
+    
+    if (!title) {
+      parsed.push({
+        title: '',
+        url: url,
+        error: '标题不能为空'
+      })
+      hasErrors = true
+      return
+    }
+    
+    if (!url) {
+      parsed.push({
+        title: title,
+        url: '',
+        error: 'URL不能为空'
+      })
+      hasErrors = true
+      return
+    }
+    
+    // 如果URL是完整URL（包含域名），尝试提取页面路径
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      const extractedPath = extractPagePath(url, currentGroup)
+      if (extractedPath) {
+        url = extractedPath
+      } else {
+        parsed.push({
+          title: title,
+          url: url,
+          error: '无法从完整URL中提取页面路径，请检查域名配置'
+        })
+        hasErrors = true
+        return
+      }
+    }
+    
+    // 简单的URL格式验证
+    if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('/')) {
+      parsed.push({
+        title: title,
+        url: url,
+        error: 'URL格式不正确，应以http://、https://或/开头'
+      })
+      hasErrors = true
+      return
+    }
+    
+    parsed.push({
+      title: title,
+      url: url,
+      error: null
+    })
+  })
+  
+  parsedLinks.value = parsed
+  hasImportErrors.value = hasErrors
+}
+
+// 从完整URL中提取页面路径
+const extractPagePath = (fullUrl, group) => {
+  if (!group) return null
+  
+  const testDomain = group.test_domain?.trim()
+  const prodDomain = group.prod_domain?.trim()
+  const firstLevel = group.first_level?.trim()
+  const secondLevel = group.second_level?.trim()
+  
+  // 构建测试域名和正式域名的完整路径
+  const testFullPath = testDomain ? `${testDomain}/${firstLevel}/${secondLevel}` : null
+  const prodFullPath = prodDomain ? `${prodDomain}/${firstLevel}/${secondLevel}` : null
+  
+  // 尝试匹配测试域名
+  if (testFullPath && fullUrl.startsWith(testFullPath)) {
+    return fullUrl.substring(testFullPath.length)
+  }
+  
+  // 尝试匹配正式域名
+  if (prodFullPath && fullUrl.startsWith(prodFullPath)) {
+    return fullUrl.substring(prodFullPath.length)
+  }
+  
+  // 如果都不匹配，返回null
+  return null
+}
+
+const confirmBatchImport = () => {
+  if (currentImportGroupIndex.value === -1) {
+    ElMessage.error('导入失败：未找到目标组')
+    return
+  }
+  
+  const group = domainLinkGroups.value[currentImportGroupIndex.value]
+  const validLinks = parsedLinks.value.filter(link => !link.error)
+  
+  if (validLinks.length === 0) {
+    ElMessage.error('没有有效的链接可以导入')
+    return
+  }
+  
+  // 添加链接到组
+  validLinks.forEach((link, index) => {
+    group.links.push({
+      miniprogram_id: props.id,
+      title: link.title,
+      url: link.url,
+      domain_type: group.domain_type || (domainTypes.value.length > 0 ? domainTypes.value[0].domain_type : 'default'),
+      sort_order: group.links.length + index,
+      status: 1,
+      _isNew: true,
+      _tempId: `temp_${++tempIdCounter}`
+    })
+  })
+  
+  ElMessage.success(`成功导入 ${validLinks.length} 个链接`)
+  showBatchImportDialog.value = false
+}
+
+// 监听批量导入文本变化
+watch(batchImportText, () => {
+  parseBatchImportText()
+})
 
 // 新增域名类型相关方法
 const openAddDomainTypeDialog = () => {
@@ -702,6 +1075,11 @@ const handleDomainTypeChange = async (value, type, groupIndex, linkIndex) => {
 // 生命周期
 onMounted(() => {
   loadData()
+  window.addEventListener('scroll', handlePageScroll)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', handlePageScroll)
 })
 </script>
 
@@ -709,15 +1087,6 @@ onMounted(() => {
 .edit-page {
   max-width: 1200px;
   margin: 0 auto;
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid #ebeef5;
 }
 
 .header-left {
@@ -730,6 +1099,7 @@ onMounted(() => {
   margin: 0;
   color: #303133;
   font-weight: 600;
+  font-size: 18px;
 }
 
 .loading-container,
@@ -744,6 +1114,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  transition: margin-top 0.3s ease;
 }
 
 .section-card {
@@ -833,6 +1204,11 @@ onMounted(() => {
   margin-bottom: 15px;
 }
 
+.links-actions {
+  display: flex;
+  gap: 10px;
+}
+
 /* 按钮层级样式 */
 :deep(.el-button--info) {
   background: white;
@@ -890,5 +1266,236 @@ onMounted(() => {
 
 :deep(.el-select-dropdown__item:hover) {
   background-color: #f5f7fa;
+}
+
+/* 必填字段样式 */
+:deep(.el-form-item.is-required .el-form-item__label::before) {
+  content: '*';
+  color: #f56c6c;
+  margin-right: 4px;
+}
+
+/* 表格必填字段标题样式 */
+.el-table .el-table__header th {
+  position: relative;
+}
+
+.el-table .el-table__header th[data-required="true"]::after {
+  content: ' *';
+  color: #f56c6c;
+  font-weight: bold;
+}
+
+/* 批量导入对话框样式 */
+.batch-import-content {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  max-height: 70vh;
+  overflow: hidden;
+}
+
+.import-instructions {
+  background: #f8f9fa;
+  padding: 12px;
+  border-radius: 6px;
+  border-left: 4px solid #409eff;
+  flex-shrink: 0;
+  overflow-x: auto;
+}
+
+.import-instructions p {
+  margin: 3px 0;
+  color: #606266;
+  font-size: 13px;
+}
+
+.examples-container {
+  display: flex;
+  gap: 20px;
+  margin-top: 8px;
+  overflow-x: auto;
+  padding-bottom: 5px;
+}
+
+.example-section {
+  flex: 1;
+  min-width: 300px;
+  flex-shrink: 0;
+}
+
+.example-section p {
+  margin: 0 0 5px 0;
+  font-size: 12px;
+  color: #303133;
+}
+
+.example-section pre {
+  white-space: pre-wrap;
+  word-break: break-all;
+  overflow-x: auto;
+}
+
+.import-textarea {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.import-textarea .el-textarea {
+  flex: 1;
+  overflow: hidden;
+}
+
+.import-textarea .el-textarea__inner {
+  height: 100% !important;
+  resize: vertical;
+}
+
+/* 批量导入对话框样式 */
+:deep(.batch-import-dialog .el-dialog__body) {
+  max-height: 70vh;
+  overflow: hidden;
+}
+
+/* 固定头部样式 */
+.fixed-header {
+  background: #fff;
+  border-bottom: 1px solid #e4e7ed;
+  padding: 12px 0;
+  margin-bottom: 20px;
+  transition: all 0.3s ease;
+}
+
+.fixed-header.fixed {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 8px 20px;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.header-left h2 {
+  margin: 0;
+  font-size: 18px;
+  color: #303133;
+}
+
+.header-subtitle {
+  margin: 5px 0 0 0;
+  font-size: 14px;
+  color: #909399;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* 当头部固定时，给内容区域添加顶部边距 */
+.fixed-header.fixed + .content-area {
+  margin-top: 80px;
+}
+
+.import-instructions code {
+  background: #e1f5fe;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 12px;
+}
+
+.import-instructions pre {
+  background: #f5f5f5;
+  padding: 8px;
+  margin: 5px 0;
+  font-size: 12px;
+  border-radius: 4px;
+  border-radius: 4px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 12px;
+  line-height: 1.4;
+  margin: 10px 0 0 0;
+  overflow-x: auto;
+}
+
+.import-textarea {
+  margin-bottom: 10px;
+}
+
+.import-preview {
+  border-top: 1px solid #ebeef5;
+  padding-top: 15px;
+}
+
+.import-preview h4 {
+  margin: 0 0 10px 0;
+  color: #303133;
+  font-size: 14px;
+}
+
+.preview-list {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #ebeef5;
+  border-radius: 4px;
+}
+
+.preview-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 12px;
+}
+
+.preview-item:last-child {
+  border-bottom: none;
+}
+
+.preview-item.preview-error {
+  background: #fef0f0;
+  color: #f56c6c;
+}
+
+.preview-index {
+  width: 30px;
+  color: #909399;
+  font-weight: 500;
+}
+
+.preview-title {
+  width: 120px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.preview-url {
+  flex: 1;
+  color: #606266;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+.preview-error-msg {
+  color: #f56c6c;
+  font-size: 11px;
+  margin-left: 10px;
 }
 </style> 
