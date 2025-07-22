@@ -10,7 +10,7 @@ const routes = [
     name: 'Manage',
     component: () => import('../views/ManagePage.vue'),
     meta: {
-      title: '小程序管理'
+      title: '首页'
     }
   },
   {
@@ -27,7 +27,7 @@ const routes = [
     name: 'View',
     component: () => import('../views/ViewPage.vue'),
     meta: {
-      title: '查看小程序'
+      title: '查看'
     },
     props: true
   }
@@ -42,7 +42,7 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   // 简单示例：如果路由需要元信息中的title，则更新文档标题
   if (to.meta && to.meta.title) {
-    document.title = `${to.meta.title} - 测试管理系统`
+    document.title = `${to.meta.title} - H5链接`
   }
   next()
 })

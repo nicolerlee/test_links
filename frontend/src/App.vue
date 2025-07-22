@@ -5,11 +5,11 @@
         <div class="header-content">
           <div class="logo-area">
             <img src="./assets/logo.png" alt="" class="logo-img" />
-            <h1 class="system-title">测试管理系统</h1>
+            <h1 class="system-title">H5链接</h1>
           </div>
           <div class="header-actions">
             <nav class="nav-menu">
-              <router-link to="/manage" class="nav-link">管理</router-link>
+              <router-link to="/manage" class="nav-link">回首页</router-link>
             </nav>
           </div>
         </div>

@@ -10,7 +10,7 @@
         <div class="header-content">
           <div class="header-left">
             <el-button @click="goBack" :icon="ArrowLeft" size="small">返回</el-button>
-            <h2>{{ miniprogram?.name || '查看小程序' }}</h2>
+            <h2>{{ miniprogram?.name || '查看' }}</h2>
           </div>
           <div class="header-right">
             <!-- PC端显示编辑按钮 -->
@@ -675,6 +675,8 @@ const generateQrCode = async (linkId, url) => {
 .environment-tabs {
   margin-bottom: 15px;
   padding: 0 16px;
+  margin-left: -30px; /* 往回调整，不要移动太多 */
+  margin-top: -35px; /* 贴着边但不被截断 */
 }
 
 .environment-tabs :deep(.el-tabs__header) {

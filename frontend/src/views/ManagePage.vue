@@ -2,22 +2,23 @@
   <div class="manage-page">
     <div class="page-header">
       <h2>
-        H5网页管理
+        首页
         <el-tag v-if="isMobile" type="warning" size="small" class="mobile-tag">移动端模式</el-tag>
       </h2>
       <div class="header-actions">
         <el-button 
           @click="refreshAllData" 
-          type="primary" 
+          type="success" 
           size="small"
           :loading="loading"
+          class="refresh-btn"
         >
           <el-icon><Refresh /></el-icon>
           刷新
         </el-button>
         <!-- PC端显示设置按钮 -->
         <el-dropdown v-if="!isMobile" @command="handleCommand">
-          <el-button type="info">
+          <el-button type="info" class="settings-btn">
             <el-icon><Setting /></el-icon>
             设置
             <el-icon class="el-icon--right"><arrow-down /></el-icon>
@@ -228,13 +229,13 @@ import { ref, reactive, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  Setting,
-  Plus,
-  ArrowDown,
   View,
   Edit,
   Delete,
-  Refresh
+  Refresh,
+  Plus,
+  Setting,
+  ArrowDown
 } from '@element-plus/icons-vue'
 import { categoryAPI, miniprogramAPI } from '@/api'
 
@@ -597,15 +598,90 @@ onMounted(() => {
   margin-left: 8px;
 }
 
+.header-actions {
+  display: flex;
+  gap: 12px; /* 增加按钮间距 */
+  align-items: center;
+}
+
+.refresh-btn {
+  background: #67c23a !important; /* 绿色背景 */
+  border-color: #67c23a !important;
+  color: white !important;
+}
+
+.refresh-btn:hover {
+  background: #85ce61 !important;
+  border-color: #85ce61 !important;
+}
+
+.refresh-btn:active {
+  background: #5daf34 !important;
+  border-color: #5daf34 !important;
+}
+
+.settings-btn {
+  margin-left: 8px; /* 设置按钮额外间距 */
+}
+
 .content-area {
-  background: white;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.08);
+  margin-top: 16px; /* 适中的间距 */
 }
 
 .category-tabs {
-  min-height: 400px;
+  margin-bottom: 20px;
+}
+
+/* 简洁的tab样式 */
+:deep(.el-tabs__header) {
+  margin-bottom: 16px;
+  border-bottom: 1px solid #e4e7ed;
+}
+
+:deep(.el-tabs__nav-wrap) {
+  overflow: visible;
+}
+
+:deep(.el-tabs__nav) {
+  border: none;
+}
+
+:deep(.el-tabs__item) {
+  border: none;
+  background: transparent;
+  color: #606266;
+  font-weight: 500;
+  transition: color 0.3s ease;
+  padding: 12px 20px;
+  position: relative;
+}
+
+:deep(.el-tabs__item:hover) {
+  color: #409eff;
+}
+
+:deep(.el-tabs__item.is-active) {
+  color: #409eff;
+  font-weight: 600;
+}
+
+:deep(.el-tabs__item.is-active::after) {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #409eff;
+  border-radius: 1px;
+}
+
+:deep(.el-tabs__active-bar) {
+  display: none;
+}
+
+:deep(.el-tabs__content) {
+  padding-top: 0;
 }
 
 .miniprogram-grid {
@@ -676,14 +752,6 @@ onMounted(() => {
   color: #111827;
 }
 
-:deep(.el-tabs__header) {
-  margin-bottom: 0;
-}
-
-:deep(.el-tabs__content) {
-  padding-top: 0;
-}
-
 .tab-label {
   display: flex;
   align-items: center;
@@ -713,14 +781,18 @@ onMounted(() => {
   white-space: nowrap;
 }
 
-:deep(.el-tabs__nav-wrap) {
-  overflow: visible;
-}
-
 /* 移动端tab切换优化 */
 @media (max-width: 768px) {
+  .content-area {
+    margin-top: 12px;
+  }
+  
+  :deep(.el-tabs__header) {
+    margin-bottom: 12px;
+  }
+  
   :deep(.el-tabs__item) {
-    padding: 8px 12px;
+    padding: 10px 16px;
     font-size: 14px;
     min-width: 80px;
     text-align: center;
@@ -739,12 +811,6 @@ onMounted(() => {
   :deep(.el-tabs__item) {
     touch-action: manipulation;
     -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
-  }
-  
-  /* 移动端tab切换时的视觉反馈 */
-  :deep(.el-tabs__item.is-active) {
-    transform: scale(1.05);
-    transition: transform 0.2s ease;
   }
   
   /* 移动端卡片优化 */
