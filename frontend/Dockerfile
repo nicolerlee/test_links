@@ -3,11 +3,11 @@ FROM node:18-alpine as build-stage
 
 WORKDIR /app
 
-# 复制包文件
+# 复制包文件（放在代码复制之前，利用缓存）
 COPY package*.json ./
 
-# 安装依赖
-RUN npm install
+# 安装依赖（构建阶段需要所有依赖，包括开发依赖）
+RUN npm ci
 
 # 复制源代码
 COPY . .

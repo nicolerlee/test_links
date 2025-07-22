@@ -21,6 +21,73 @@ if ! command -v docker-compose &> /dev/null; then
     exit 1
 fi
 
+# 确保Docker运行
+echo "📦 检查并启动Docker..."
+if ! docker info &> /dev/null; then
+    echo "🔄 Docker 未运行，正在启动..."
+    open -a Docker
+    echo "⏳ 等待Docker启动..."
+    sleep 15
+    
+    # 等待Docker完全启动
+    max_attempts=30
+    attempt=1
+    while [ $attempt -le $max_attempts ]; do
+        if docker info &> /dev/null; then
+            echo "✅ Docker 已启动"
+            break
+        else
+            echo "⏳ 等待Docker启动... (${attempt}/${max_attempts})"
+            sleep 2
+            ((attempt++))
+        fi
+    done
+    
+    if [ $attempt -gt $max_attempts ]; then
+        echo "❌ Docker 启动失败，请手动启动 Docker Desktop"
+        exit 1
+    fi
+else
+    echo "✅ Docker 已在运行"
+fi
+
+# 预拉取基础镜像
+echo "📥 检查并拉取基础镜像..."
+
+# 检查并拉取 python 镜像（Alpine 版本）
+if docker images python:3.9-alpine | grep -q "python"; then
+    echo "✅ python:3.9-alpine 已存在"
+else
+    echo "⏳ 拉取 python:3.9-alpine..."
+    docker pull python:3.9-alpine || echo "⚠️ python镜像拉取失败，将使用本地镜像"
+fi
+
+# 检查并拉取 node 镜像
+if docker images node:18-alpine | grep -q "node"; then
+    echo "✅ node:18-alpine 已存在"
+else
+    echo "⏳ 拉取 node:18-alpine..."
+    docker pull node:18-alpine || echo "⚠️ node镜像拉取失败，将使用本地镜像"
+fi
+
+# 检查并拉取 nginx 镜像
+if docker images nginx:alpine | grep -q "nginx"; then
+    echo "✅ nginx:alpine 已存在"
+else
+    echo "⏳ 拉取 nginx:alpine..."
+    docker pull nginx:alpine || echo "⚠️ nginx镜像拉取失败，将使用本地镜像"
+fi
+
+# 检查并拉取 mysql 镜像
+if docker images mysql:8.0 | grep -q "mysql"; then
+    echo "✅ mysql:8.0 已存在"
+else
+    echo "⏳ 拉取 mysql:8.0..."
+    docker pull mysql:8.0 || echo "⚠️ mysql镜像拉取失败，将使用本地镜像"
+fi
+
+echo "✅ 基础镜像检查完成"
+
 # 创建必要的目录
 echo "📁 创建必要的目录..."
 mkdir -p deployment/ssl
