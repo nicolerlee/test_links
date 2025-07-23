@@ -48,6 +48,47 @@ test_links/
 - MySQL 8.0+
 - Docker (可选)
 
+### 安装Docker (Ubuntu)
+
+如果系统未安装Docker，请按以下步骤安装：
+
+```bash
+# 1. 更新系统包
+sudo apt update
+
+# 2. 安装必要的依赖包
+sudo apt install -y \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    gnupg \
+    lsb-release
+
+# 3. 添加阿里云Docker GPG密钥
+curl -fsSL https://mirrors.aliyun.com/docker-ce/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring-aliyun.gpg
+
+# 4. 添加阿里云Docker软件源
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring-aliyun.gpg] https://mirrors.aliyun.com/docker-ce/linux/ubuntu \
+  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# 5. 安装Docker
+sudo apt update
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+
+# 6. 启动Docker服务
+sudo systemctl start docker
+sudo systemctl enable docker
+
+# 7. 配置用户权限（可选）
+sudo usermod -aG docker $USER
+newgrp docker
+
+# 8. 验证安装
+docker --version
+docker-compose --version
+```
+
 ### 后端启动
 
 ```bash
