@@ -8,7 +8,7 @@ set -e
 DOCKER_COMPOSE_FILE="docker-compose.yml"
 
 # 开始
-echo "�� 开始部署测试管理系统..."
+echo "�� 开始部署测试链接系统..."
 
 # 配置Docker镜像源
 echo "🔧 配置Docker镜像源..."
