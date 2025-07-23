@@ -117,6 +117,9 @@ docker-compose ps
 echo "⏳ 等待数据库初始化..."
 sleep 10
 
+# 获取本机IP地址
+LOCAL_IP=$(hostname -I | awk '{print $1}')
+
 # 检查后端健康状态
 echo "🏥 检查后端健康状态..."
 max_attempts=30
@@ -151,13 +154,21 @@ fi
 echo ""
 echo "🎉 部署完成！"
 echo ""
-echo "📱 访问地址:"
-echo "   前端: http://localhost:80"
-echo "   后端API: http://localhost:8000"
-echo "   API文档: http://localhost:8000/docs"
+echo "�� 访问地址:"
+echo "   前端:"
+echo "     本地访问: http://localhost:80"
+echo "     网络访问: http://${LOCAL_IP}:80"
+echo "   后端API:"
+echo "     本地访问: http://localhost:8000"
+echo "     网络访问: http://${LOCAL_IP}:8000"
+echo "   API文档:"
+echo "     本地访问: http://localhost:8000/docs"
+echo "     网络访问: http://${LOCAL_IP}:8000/docs"
 echo ""
 echo "🗄️ 数据库信息:"
-echo "   主机: localhost:3306"
+echo "   主机:"
+echo "     本地访问: localhost:3306"
+echo "     网络访问: ${LOCAL_IP}:3306"
 echo "   数据库: miniprogram_manager"
 echo "   用户名: app_user"
 echo "   密码: app_password"

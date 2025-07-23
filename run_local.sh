@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# 测试链接系统 - 本地启动脚本
+# 测试链接系统 - 手动启动脚本
 # 由于 Docker 下载依赖较慢，采用折衷方案：
 # 1. backend 和 frontend 运行在本地
 # 2. mysql 运行在 Docker 上
