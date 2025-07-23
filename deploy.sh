@@ -8,7 +8,21 @@ set -e
 DOCKER_COMPOSE_FILE="docker-compose.yml"
 
 # 开始
-echo "🚀 开始部署测试管理系统..."
+echo "�� 开始部署测试管理系统..."
+
+# 配置Docker镜像源
+echo "🔧 配置Docker镜像源..."
+if [ -f "docker_env/daemon.json" ]; then
+    echo "📁 创建Docker配置目录..."
+    mkdir -p ~/.docker
+    
+    echo "📋 复制Docker配置文件..."
+    cp docker_env/daemon.json ~/.docker/daemon.json
+    
+    echo "✅ Docker镜像源配置完成"
+else
+    echo "⚠️ 未找到 docker_env/daemon.json 文件，使用默认配置"
+fi
 
 # 检查Docker和Docker Compose是否安装
 if ! command -v docker &> /dev/null; then
@@ -20,6 +34,7 @@ if ! command -v docker-compose &> /dev/null; then
     echo "❌ Docker Compose 未安装，请先安装 Docker Compose"
     exit 1
 fi
+
 
 # 确保Docker运行
 echo "📦 检查并启动Docker..."

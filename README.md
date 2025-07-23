@@ -76,6 +76,9 @@ echo \
 sudo apt update
 sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
 
+# 5.1 安装docker-compose
+sudo apt install docker-compose
+
 # 6. 启动Docker服务
 sudo systemctl start docker
 sudo systemctl enable docker
